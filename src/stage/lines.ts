@@ -48,11 +48,14 @@ export class OrbitLines {
   private loops: Float64Array[] = [];
   private loopEt = -Infinity;
   private eph: Ephemeris;
+  /** 軌道の線の濃さの倍率(見た目のトークン) */
+  private opacityScale: number;
   private p: Vec3 = [0, 0, 0];
   private v: Vec3 = [0, 0, 0];
 
   constructor(eph: Ephemeris, theme: Theme) {
     this.eph = eph;
+    this.opacityScale = theme.orbitOpacity;
     for (let i = 0; i < PLANET_IDS.length; i++) {
       const line = makeLine(ORBIT_SEGMENTS + 1, theme.gold, ORBIT_OPACITY, 1);
       this.lines.push(line);
@@ -70,7 +73,7 @@ export class OrbitLines {
         this.loops[i] = orbitLoop(orbitFromState(this.p, this.v), ORBIT_SEGMENTS);
       });
     }
-    const opacity = ORBIT_OPACITY * (ORBIT_DIM + (1 - ORBIT_DIM) * chrome);
+    const opacity = Math.min(1, ORBIT_OPACITY * this.opacityScale) * (ORBIT_DIM + (1 - ORBIT_DIM) * chrome);
     this.lines.forEach((line, i) => {
       const src = this.loops[i];
       const dst = (line.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;

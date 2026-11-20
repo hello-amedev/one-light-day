@@ -4,7 +4,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { etNow, loadEphemeris, type Ephemeris } from './lib/ephemeris';
   import { t } from './lib/i18n';
-  import { loadStars, type StarCatalog } from './lib/stars';
+  import { appendStars, loadStars, type StarCatalog } from './lib/stars';
   import { createStore, type AppStore } from './lib/store';
   import { applyUrlState } from './lib/urlState';
   import { createStage, type Stage } from './stage';
@@ -57,6 +57,15 @@
       loadedEph = mock.createMockEphemeris();
       loadedStars = mock.createMockStars();
       console.warn('データを読み込めないため、代用のデータで動かします', error);
+    }
+
+    // 比較用: ?stars=deep で、8 等までの星(約 3 万個)を足す
+    if (new URLSearchParams(location.search).get('stars') === 'deep') {
+      try {
+        loadedStars = appendStars(loadedStars, await loadStars(base + 'data/stars/stars-deep.bin'));
+      } catch (error) {
+        console.warn(error);
+      }
     }
 
     const maxEt = Math.min(loadedEph.t1, etNow());

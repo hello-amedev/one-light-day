@@ -12,6 +12,7 @@ const vertex = /* glsl */ `
   attribute float aMag;
   attribute vec3 aColor;
   uniform float uPixelRatio;
+  uniform float uGain;
   varying vec3 vColor;
   varying float vCore;
   varying float vHalo;
@@ -21,12 +22,14 @@ const vertex = /* glsl */ `
     // 明るさ 0(6.5 等)〜 1(0 等より明るい)
     float b = clamp((6.5 - aMag) / 6.5, 0.0, 1.0);
     float core = 0.55 + 0.75 * b;            // 芯の半径(px)
-    float halo = 0.0 + 6.0 * pow(b, 3.0);    // にじみの半径(px)。明るい星だけ大きい
+    float halo = 6.0 * pow(b, 3.0) * uGain;  // にじみの半径(px)。明るい星だけ大きい
+    // 6.5 等より暗い星(8 等までを足した時)は、暗くなるほど光を落とす。同じ明るさの点が増えて砂のように見えるのを防ぐ
+    float faint = aMag > 6.5 ? max(0.22, 1.0 - (aMag - 6.5) * 0.5) : 1.0;
     float size = max(${MIN_SIZE_PX.toFixed(1)}, 2.0 * max(core * 1.8, halo));
     vColor = aColor;
     vCore = core;
     vHalo = halo;
-    vLum = 0.32 + 0.68 * sqrt(b);
+    vLum = (0.32 + 0.68 * sqrt(b)) * faint * uGain;
     vSize = size;
     gl_PointSize = size * uPixelRatio;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -55,7 +58,7 @@ export interface Starfield {
   dispose(): void;
 }
 
-export function createStarfield(stars: StarCatalog): Starfield {
+export function createStarfield(stars: StarCatalog, gain = 1): Starfield {
   const n = stars.count;
   const pos = new Float32Array(n * 3);
   const mag = new Float32Array(n);
@@ -79,7 +82,7 @@ export function createStarfield(stars: StarCatalog): Starfield {
   const material = new THREE.ShaderMaterial({
     vertexShader: vertex,
     fragmentShader: fragment,
-    uniforms: { uPixelRatio: { value: 1 } },
+    uniforms: { uPixelRatio: { value: 1 }, uGain: { value: gain } },
     transparent: true,
     blending: THREE.AdditiveBlending,
     depthTest: false,

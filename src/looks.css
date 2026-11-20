@@ -1,0 +1,134 @@
+/*
+ * 見た目の案(第 2 段階の比較用)。URL に ?style=a|b|c が付いた時だけ読み込む(src/main.ts)。
+ * app.css のトークンを差し替えるだけで雰囲気を変える。選ばれた案の値は、後で app.css の :root へ移す。
+ * フォントはすべて SIL Open Font License で、パッケージから同梱する(外部へ読みに行かない)。
+ */
+@import '@fontsource/michroma/400.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/zen-kaku-gothic-new/400.css';
+@import '@fontsource/zen-kaku-gothic-new/500.css';
+@import '@fontsource/jost/500.css';
+@import '@fontsource/jost/600.css';
+@import '@fontsource/dm-mono/400.css';
+@import '@fontsource/dm-mono/500.css';
+@import '@fontsource/dotgothic16/400.css';
+@import '@fontsource/share-tech-mono/400.css';
+
+/* ── A 計器盤: 1970 年代の計器盤や SF 映画の題字。幅の広い角丸の欧文、金の細い線、四隅の括弧 ── */
+:root[data-style='a'] {
+  --color-space: #070a11;
+  --color-text: #ebe5d3;
+  --color-text-dim: #979daa;
+  --color-gold: #d8a84a;
+  --color-rule: #273044;
+  --font-title: 'Michroma', ui-sans-serif, system-ui, sans-serif;
+  --font-numeric: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --font-body: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  /* 幅の広い書体なので、スマホの幅で日付とぶつからない大きさに抑える */
+  --title-size: 0.9375rem;
+  --title-tracking: 0.28em;
+  --title-weight: 400;
+  --body-tracking: 0.08em;
+  --star-gain: 1;
+  --sun-glare: 1.3;
+  --orbit-opacity: 1;
+}
+
+/* ── B 印刷物: 1977 年ごろの広報資料や図面。幾何学的な欧文、生成りの文字、朱に近い橙の差し色、四隅の合わせマーク ── */
+:root[data-style='b'] {
+  --color-space: #0b0b0d;
+  --color-text: #f0e9d8;
+  --color-text-dim: #a09a8e;
+  --color-gold: #e0683a;
+  --color-rule: #2e2b28;
+  --font-title: 'Jost', ui-sans-serif, system-ui, sans-serif;
+  --font-numeric: 'DM Mono', ui-monospace, Menlo, monospace;
+  --font-body: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  --title-tracking: 0.2em;
+  --title-weight: 600;
+  --body-tracking: 0.06em;
+  --star-gain: 0.9;
+  --sun-glare: 1.7;
+  --orbit-opacity: 0.85;
+}
+
+/* ── C 端末: 当時のブラウン管の端末。ドットの文字、琥珀色の単色、細い枠 ── */
+:root[data-style='c'] {
+  --color-space: #05080c;
+  --color-text: #f3cf8a;
+  --color-text-dim: #b08f52;
+  --color-gold: #f0b95a;
+  --color-rule: #3a2f1c;
+  --font-title: 'DotGothic16', ui-monospace, monospace;
+  --font-numeric: 'Share Tech Mono', ui-monospace, Menlo, monospace;
+  --font-body: 'DotGothic16', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  --title-tracking: 0.2em;
+  --title-weight: 400;
+  --body-tracking: 0.04em;
+  --star-gain: 1.15;
+  --sun-glare: 2.1;
+  --orbit-opacity: 1.1;
+}
+
+:root[data-style] body {
+  letter-spacing: var(--body-tracking);
+}
+
+/* ── あしらい(操作の層 .ui の四隅に重ねる。押す操作は素通しにする) ── */
+:root[data-style] .ui::before,
+:root[data-style] .ui::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+/* A: 四隅の括弧(左上と右下) */
+:root[data-style='a'] .ui::before,
+:root[data-style='a'] .ui::after {
+  width: 18px;
+  height: 18px;
+  border: var(--line-thin) solid var(--color-gold);
+  opacity: 0.75;
+}
+:root[data-style='a'] .ui::before {
+  top: calc(var(--safe-top) + 6px);
+  left: calc(var(--safe-left) + 6px);
+  border-right: 0;
+  border-bottom: 0;
+}
+:root[data-style='a'] .ui::after {
+  bottom: calc(var(--safe-bottom) + 6px);
+  right: calc(var(--safe-right) + 6px);
+  border-left: 0;
+  border-top: 0;
+}
+
+/* B: 印刷の合わせマーク(十字と円)を右上と左下に */
+:root[data-style='b'] .ui::before,
+:root[data-style='b'] .ui::after {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: var(--line-thin) solid var(--color-text-dim);
+  background:
+    linear-gradient(var(--color-text-dim), var(--color-text-dim)) center / 25px 1px no-repeat,
+    linear-gradient(var(--color-text-dim), var(--color-text-dim)) center / 1px 25px no-repeat;
+  background-clip: border-box;
+  opacity: 0.7;
+}
+:root[data-style='b'] .ui::before {
+  top: calc(var(--safe-top) + 64px);
+  right: calc(var(--safe-right) + 10px);
+}
+:root[data-style='b'] .ui::after {
+  bottom: calc(var(--safe-bottom) + 64px);
+  left: calc(var(--safe-left) + 10px);
+}
+
+/* C: 画面の内側に細い枠 */
+:root[data-style='c'] .ui::before {
+  inset: calc(var(--safe-top) + 5px) calc(var(--safe-right) + 5px) calc(var(--safe-bottom) + 5px)
+    calc(var(--safe-left) + 5px);
+  border: var(--line-thin) solid var(--color-rule);
+}

@@ -57,7 +57,7 @@ export function createStage(options: StageOptions): Stage {
   const scene = new THREE.Scene();
   // カメラは常に原点。near / far は線が切れない広さにとる(奥行きの判定は使わないので精度は問わない)
   const camera = new THREE.PerspectiveCamera(60, 1, 1, 1e13);
-  const starfield = createStarfield(stars);
+  const starfield = createStarfield(stars, theme.starGain);
   const orbits = new OrbitLines(eph, theme);
   const track = new TrackLines(eph, theme);
   const bodies = new Bodies(eph, theme);

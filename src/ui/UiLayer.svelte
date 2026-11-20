@@ -138,9 +138,9 @@
   .title {
     margin: 0;
     font-family: var(--font-title);
-    font-size: var(--text-l);
-    font-weight: 600;
-    letter-spacing: 0.22em;
+    font-size: var(--title-size, var(--text-l));
+    font-weight: var(--title-weight, 600);
+    letter-spacing: var(--title-tracking, 0.22em);
     color: var(--color-text);
     text-shadow: var(--text-halo);
   }

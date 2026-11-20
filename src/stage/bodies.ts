@@ -85,6 +85,8 @@ export class Bodies {
   private sphereGeometry = new THREE.SphereGeometry(1, 64, 48);
   private textures: THREE.Texture[] = [];
   private materials: THREE.Material[] = [];
+  /** 太陽の光のにじみの大きさの倍率(見た目のトークン) */
+  private glare = 1;
   private glow: THREE.Sprite;
   private core: THREE.Sprite;
   private voyagerDot: THREE.Sprite;
@@ -99,6 +101,7 @@ export class Bodies {
   private sunDiscPx = 0;
 
   constructor(eph: Ephemeris, theme: Theme) {
+    this.glare = theme.sunGlare;
     this.eph = eph;
     const dotTex = makeDotTexture();
     const glowTex = makeGlowTexture();
@@ -258,7 +261,7 @@ export class Bodies {
   private layoutSun(base: number, ctx: FrameContext, kmPerPx: number): void {
     const short = Math.min(ctx.width, ctx.height);
     // 点にしか見えない時は 56px。近づくほど太陽の円盤の大きさに比例して広がる(画面の短い辺の 0.9 倍まで)
-    const glowPx = Math.min(56 + this.sunDiscPx * 5, short * 0.9);
+    const glowPx = Math.min((56 + this.sunDiscPx * 5) * this.glare, short * 0.9);
     const corePx = Math.min(14 + this.sunDiscPx * 1.2, short * 0.4);
     this.glow.visible = true;
     this.core.visible = true;

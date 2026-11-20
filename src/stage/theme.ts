@@ -5,6 +5,12 @@ export interface Theme {
   earth: string;
   text: string;
   textDim: string;
+  /** 星の明るさとにじみの倍率 */
+  starGain: number;
+  /** 太陽の光のにじみの大きさの倍率 */
+  sunGlare: number;
+  /** 軌道の線の濃さの倍率 */
+  orbitOpacity: number;
 }
 
 /** 読めなかった時(テストなど)の値。app.css の第 1 段階の値と同じ */
@@ -14,17 +20,27 @@ const FALLBACK: Theme = {
   earth: '#a9cdf0',
   text: '#ebe5d3',
   textDim: '#979daa',
+  starGain: 1,
+  sunGlare: 1,
+  orbitOpacity: 1,
 };
 
 export function readTheme(): Theme {
   if (typeof document === 'undefined') return FALLBACK;
   const css = getComputedStyle(document.documentElement);
   const get = (name: string, fallback: string): string => css.getPropertyValue(name).trim() || fallback;
+  const num = (name: string, fallback: number): number => {
+    const v = Number.parseFloat(css.getPropertyValue(name));
+    return Number.isFinite(v) && v > 0 ? v : fallback;
+  };
   return {
     space: get('--color-space', FALLBACK.space),
     gold: get('--color-gold', FALLBACK.gold),
     earth: get('--color-earth', FALLBACK.earth),
     text: get('--color-text', FALLBACK.text),
     textDim: get('--color-text-dim', FALLBACK.textDim),
+    starGain: num('--star-gain', FALLBACK.starGain),
+    sunGlare: num('--sun-glare', FALLBACK.sunGlare),
+    orbitOpacity: num('--orbit-opacity', FALLBACK.orbitOpacity),
   };
 }
