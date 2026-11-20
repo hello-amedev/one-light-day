@@ -1,0 +1,162 @@
+[
+  {
+    "name": "Sirius",
+    "hr": 2491,
+    "raDeg": 101.287215,
+    "decDeg": -16.716116,
+    "mag": -1.44,
+    "index": 0
+  },
+  {
+    "name": "Canopus",
+    "hr": 2326,
+    "raDeg": 95.98792499999999,
+    "decDeg": -52.69566,
+    "mag": -0.62,
+    "index": 1
+  },
+  {
+    "name": "Arcturus",
+    "hr": 5340,
+    "raDeg": 213.91545,
+    "decDeg": 19.18241,
+    "mag": -0.05,
+    "index": 2
+  },
+  {
+    "name": "Vega",
+    "hr": 7001,
+    "raDeg": 279.2346,
+    "decDeg": 38.783692,
+    "mag": 0.03,
+    "index": 4
+  },
+  {
+    "name": "Capella",
+    "hr": 1708,
+    "raDeg": 79.17225,
+    "decDeg": 45.997991,
+    "mag": 0.08,
+    "index": 5
+  },
+  {
+    "name": "Rigel",
+    "hr": 1713,
+    "raDeg": 78.63447,
+    "decDeg": -8.20164,
+    "mag": 0.18,
+    "index": 6
+  },
+  {
+    "name": "Procyon",
+    "hr": 2943,
+    "raDeg": 114.825495,
+    "decDeg": 5.224993,
+    "mag": 0.4,
+    "index": 7
+  },
+  {
+    "name": "Betelgeuse",
+    "hr": 2061,
+    "raDeg": 88.792935,
+    "decDeg": 7.407063,
+    "mag": 0.45,
+    "index": 9
+  },
+  {
+    "name": "Altair",
+    "hr": 7557,
+    "raDeg": 297.69582,
+    "decDeg": 8.868322,
+    "mag": 0.76,
+    "index": 11
+  },
+  {
+    "name": "Aldebaran",
+    "hr": 1457,
+    "raDeg": 68.98015500000001,
+    "decDeg": 16.509301,
+    "mag": 0.87,
+    "index": 13
+  },
+  {
+    "name": "Antares",
+    "hr": 6134,
+    "raDeg": 247.35191999999998,
+    "decDeg": -26.432002,
+    "mag": 1.06,
+    "index": 16
+  },
+  {
+    "name": "Spica",
+    "hr": 5056,
+    "raDeg": 201.298245,
+    "decDeg": -11.161322,
+    "mag": 0.98,
+    "index": 15
+  },
+  {
+    "name": "Deneb",
+    "hr": 7924,
+    "raDeg": 310.35798,
+    "decDeg": 45.280338,
+    "mag": 1.25,
+    "index": 20
+  },
+  {
+    "name": "Regulus",
+    "hr": 3982,
+    "raDeg": 152.09298,
+    "decDeg": 11.967207,
+    "mag": 1.36,
+    "index": 22
+  },
+  {
+    "name": "Polaris",
+    "hr": 424,
+    "raDeg": 37.94625,
+    "decDeg": 89.264109,
+    "mag": 1.97,
+    "index": 47
+  },
+  {
+    "name": "Bellatrix",
+    "hr": 1790,
+    "raDeg": 81.282765,
+    "decDeg": 6.349702,
+    "mag": 1.64,
+    "index": 27
+  },
+  {
+    "name": "Saiph",
+    "hr": 2004,
+    "raDeg": 86.939115,
+    "decDeg": -9.669605,
+    "mag": 2.07,
+    "index": 57
+  },
+  {
+    "name": "Alnitak",
+    "hr": 1948,
+    "raDeg": 85.189695,
+    "decDeg": -1.942572,
+    "mag": 1.74,
+    "index": 32
+  },
+  {
+    "name": "Alnilam",
+    "hr": 1903,
+    "raDeg": 84.05338499999999,
+    "decDeg": -1.20192,
+    "mag": 1.69,
+    "index": 30
+  },
+  {
+    "name": "Mintaka",
+    "hr": 1852,
+    "raDeg": 83.001675,
+    "decDeg": -0.299092,
+    "mag": 2.25,
+    "index": 74
+  }
+]
