@@ -1,0 +1,52 @@
+# docs/shared-parts.md — 共通部品の一覧
+
+> 新しい画面・部品・処理を書く前に、この表を見る。同じ役目の部品があればそれを使い、自前で書かない。
+> サブエージェントへの指示書の「先に読む」にも入れる。破ると `npm run check` の規約の検査(`scripts/check-conventions.mjs`)が失敗する項目には ✔ を付けた。
+
+## 決まり
+
+- 同じ処理の 2 回目を書く前に部品にする(1 回目は決め打ちでよい)
+- 並列で実装する時は、共通の土台(部品・データの形)を先に 1 体で作ってから分担する
+- 部品を作ったら、この表に 1 行足す。自前実装のパターンが正規表現で書けるなら、検査にも規則を足す
+
+## 画面の文言・整形
+
+| やりたいこと | 使うもの | 場所 | 検査 |
+|---|---|---|---|
+| 画面に出る文字を出す(ボタン・ラベル・aria-label) | 辞書 `t().領域.キー`。受ける変数は `txt`(共通は `com`)。使うたびに `t()` を呼び、読み込み時に定数へ固めない | `src/lib/i18n/` | ✔ i18n-literal |
+| 値の入る文を出す | 値を受けて文を丸ごと返す辞書の関数(`txt.lookAt(名前)`、`txt.sinceLaunch(日数)`) | `src/lib/i18n/ja/*.ts` | |
+| 名前を並べる、句読点・括弧を出す | `joinList`。記号も辞書に置く | `src/lib/i18n/index.ts` | ✔ i18n-punct |
+| 日本語の表記(括弧は全角、英字と日本語の間に空白なし、コロンは全角) | 辞書を書く時の決まり | `src/lib/i18n/ja/*.ts` | ✔ ja-paren / ja-colon / ja-ascii-space / ja-toast-period |
+| 天体の名前・名場面の名前を出す | `t().bodies[id]`、`t().scenes[id]`(ID は `bodies.ts`・`scenes.ts`) | `src/lib/i18n/ja/bodies.ts`・`scenes.ts` | |
+| 日付(UTC)・時刻・日本時間の併記 | `formatDate` / `formatDateTime` / `formatJstDateTime` | `src/lib/format.ts` | |
+| 打ち上げからの日数 | `formatSinceLaunch`(数だけなら `daysSinceLaunch`) | `src/lib/format.ts` | |
+| 距離(億km・万km・km) | `formatDistance` | `src/lib/format.ts` | |
+| 光が届くまでの時間 | `formatLightTime`(距離から)、`formatLightDuration`(秒から。秒まで出す版あり) | `src/lib/format.ts` | |
+| 数の桁区切り | `formatInteger` | `src/lib/format.ts` | |
+| 色・フォント | `src/app.css` の変数(`var(--color-…)`・`var(--font-…)`)。部品に直書きしない | `src/app.css` | ✔ ui-token-only |
+| 線の太さ・動きの長さ・余白・押す範囲 | `--line-*`・`--dur-*`・`--space-*`・`--hit-min` / `--control-h` | `src/app.css` | |
+| スマホの安全な領域 | `--safe-top` / `--safe-right` / `--safe-bottom` / `--safe-left` | `src/app.css` | |
+
+## 状態
+
+| やりたいこと | 使うもの | 場所 | 検査 |
+|---|---|---|---|
+| 画面全体の状態を作る・読む・変える | `createStore(options)`(Svelte に依存しない)。部品も 3D もこれだけを介してつながる | `src/lib/store/index.ts` | |
+| 部品から状態を反応する値として読む | `watchStore(store).state`(部品の初期化の中で呼ぶ) | `src/ui/store.svelte.ts` | |
+
+## 画面の部品
+
+| やりたいこと | 使うもの | 場所 |
+|---|---|---|
+| ボタンを置く(文字だけ。選択中は金の下線。押す範囲は指で 44px) | `UiButton`(`pressed` で選択中、`label` で読み上げ) | `src/ui/UiButton.svelte` |
+| 矢印を描く(送り・名場面の移動) | `Chevron`(`bar` で名場面用) | `src/ui/Chevron.svelte` |
+| 数字のブロック(ラベル・大きい数字・補足) | `Readout`(日付も距離もこれ。補足の行は空でも高さを残す) | `src/ui/Readout.svelte` |
+| 送りダイヤル 1 つ(‹ 1日 ›) | `StepDial` | `src/ui/StepDial.svelte` |
+| 視点の切り替え | `ViewSwitch` | `src/ui/ViewSwitch.svelte` |
+| 向くボタン(木星・土星・月は近い時期だけ) | `LookButtons` | `src/ui/LookButtons.svelte` |
+| 再生・速さ・送りダイヤル | `PlayControls` | `src/ui/PlayControls.svelte` |
+| 時間軸(目盛り・名場面の刻み・つまみ・前後の名場面) | `Timeline` | `src/ui/Timeline.svelte` |
+| 操作の部品の層全体(配置・操作しない間に薄くする・?debug の計測値) | `UiLayer` | `src/ui/UiLayer.svelte` |
+| 開発用の代用データ(本番ビルドに入れない) | `createMockEphemeris` / `createMockStars` | `src/ui/dev/mockData.ts` |
+
+重ね方: canvas(3D)→ 目印の層(3D の担当が使う)→ 操作の部品の層(`.ui` は `pointer-events: none`、部品だけ `auto`)。

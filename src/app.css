@@ -1,0 +1,92 @@
+/*
+ * トークンと土台のスタイル。
+ * 色・フォント・線の太さ・動きの長さは、ここの変数だけに書く。部品(src/ui)は var(--...) で取る。
+ * 第 2 段階では、この :root の値を差し替えて見た目の案を比べる。
+ */
+:root {
+  /* 色 */
+  --color-space: #070a11; /* 宇宙の地の色 */
+  --color-text: #ebe5d3;
+  --color-text-dim: #979daa; /* 控えめな文字 */
+  --color-gold: #d8a84a; /* 線・選択中・刻み */
+  --color-earth: #a9cdf0; /* 地球だけに使う淡い青 */
+  --color-rule: #273044; /* 罫線 */
+  /* 文字が星の上で読めるように周りへ落とす影 */
+  --text-halo: 0 0 6px var(--color-space), 0 0 2px var(--color-space);
+
+  /* フォント。第 1 段階は端末のフォント(外部のフォントは読み込まない) */
+  --font-title: ui-sans-serif, system-ui, sans-serif;
+  --font-numeric: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-body: ui-sans-serif, system-ui, sans-serif;
+
+  /* 文字の大きさ */
+  --text-xs: 0.6875rem;
+  --text-s: 0.75rem;
+  --text-m: 0.875rem;
+  --text-l: 1.125rem;
+  --text-xl: 1.5rem;
+
+  /* 線の太さ */
+  --line-thin: 1px;
+  --line-medium: 2px;
+
+  /* 動きの長さと加減速 */
+  --dur-s: 140ms;
+  --dur-m: 240ms;
+  --dur-l: 340ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.5, 0, 0.2, 1);
+
+  /* 余白と押す範囲 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --hit-min: 44px; /* 指で押す範囲の高さ */
+  --control-h: 36px; /* マウスの時のボタンの高さ。指の時は --hit-min にする */
+
+  /* 操作しない間に操作の層を薄くした時の不透明度 */
+  --idle-opacity: 0.16;
+
+  /* スマホの安全な領域(ノッチ・ホームバー) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+@media (pointer: coarse) {
+  :root {
+    --control-h: var(--hit-min);
+  }
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* 引っ張って更新する動きと、端の跳ね返りを止める */
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--color-space);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-m);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  /* 3D の上でのドラッグを、ブラウザのスクロールやピンチに取られない */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
