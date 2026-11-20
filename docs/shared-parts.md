@@ -50,3 +50,20 @@
 | 開発用の代用データ(本番ビルドに入れない) | `createMockEphemeris` / `createMockStars` | `src/ui/dev/mockData.ts` |
 
 重ね方: canvas(3D)→ 目印の層(3D の担当が使う)→ 操作の部品の層(`.ui` は `pointer-events: none`、部品だけ `auto`)。
+
+## 3D の表示(src/stage)
+
+| やりたいこと | 使うもの | 場所 |
+|---|---|---|
+| 3D を作る・止める・計測値を読む・操作しない間に線を薄くする | `createStage` / `Stage.stats` / `Stage.setChromeVisible` / `dispose` | `src/stage/index.ts` |
+| 天体の相対位置を作る(倍精度で `eph.position(天体,'voyager1') − camOffset`) | `relativePosition` | `src/stage/placement.ts` |
+| 球をカメラ中心に縮めて置く(距離 SHELL・半径 r/d×SHELL) | `shellPlacement` / `SHELL` | `src/stage/placement.ts` |
+| 向いた時の向きと視野 | `lookDirection` / `lookFov` | `src/stage/look.ts` |
+| カメラの姿勢(視界・引きの眺め・切り替えの補間) | `CameraRig` / `overviewPose` / `blendPose` / `overviewDistance` | `src/stage/camera.ts` |
+| 軌道の楕円を位置と速度から求める | `orbitFromState` / `orbitLoop` | `src/stage/orbit.ts` |
+| 画面の位置・円盤の半径(px) | `projectToScreen` / `screenRadiusPx` | `src/stage/frame.ts` |
+| ベクトル・方位仰角・球面補間・加減速 | `math.ts` の関数 | `src/stage/math.ts` |
+| 目印と名前(DOM)・重なりの間引き | `MarkerLayer` | `src/stage/markers.ts` |
+| 確認用の URL(?t= ?view= ?look=)を状態に当てる | `applyUrlState` / `parseUrlState` | `src/lib/urlState.ts` |
+
+注意: 天体の位置を太陽中心どうしの引き算で作らない(通過の距離がずれる)。球は奥行きの判定を使わず、遠い順の `renderOrder` で描く。

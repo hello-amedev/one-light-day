@@ -19,8 +19,10 @@
     eph: Ephemeris;
     /** 3D の計測値(?debug の時だけ出す)。3D が無い時は渡さない */
     stats?: () => StageStats;
+    /** 操作しない間に入った/戻った時に呼ぶ(目印の層と 3D の線を一緒に薄くするため) */
+    onIdleChange?: (idle: boolean) => void;
   }
-  let { store, eph, stats }: Props = $props();
+  let { store, eph, stats, onIdleChange }: Props = $props();
 
   const com = t().common;
   const txt = t().hud;
@@ -36,6 +38,9 @@
     timer = setTimeout(() => (idle = true), IDLE_MS);
   }
   onMount(wake);
+  $effect(() => {
+    onIdleChange?.(idle);
+  });
   onDestroy(() => clearTimeout(timer));
 
   // ── 右下の数字 ──
@@ -46,10 +51,12 @@
   // ── ?debug ──
   const debug = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
   let statsText = $state('');
-  onMount(() => {
+  // stats は 3D が出来た後に渡るので、onMount ではなく effect で見る
+  $effect(() => {
     if (!debug || !stats) return;
+    const read = stats;
     const id = setInterval(() => {
-      const s = stats();
+      const s = read();
       statsText = `fps ${s.fps}  frames ${s.frames}  ${s.idle ? 'idle' : 'active'}`;
     }, 500);
     return () => clearInterval(id);
