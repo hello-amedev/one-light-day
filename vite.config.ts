@@ -6,6 +6,10 @@ export default defineConfig({
   base: './',
   plugins: [svelte()],
   server: {
+    watch: {
+      // 作業コピー(.claude/worktrees/ の中の別の checkout)やビルドの成果物の変化で、開いているページを再読み込みしない
+      ignored: ['**/.claude/**', '**/dist/**'],
+    },
     fs: {
       // 作業コピー(worktree)から起動した時にも、上の階層のファイルを読めるようにする
       allow: ['..', '../..', '../../..'],
