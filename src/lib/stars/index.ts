@@ -17,7 +17,7 @@ export function createStarCatalog(buffer: ArrayBuffer): StarCatalog {
 /** url の星のデータを読み込む */
 export async function loadStars(url: string): Promise<StarCatalog> {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`星のデータを読み込めません: ${url}(HTTP ${res.status})`);
+  if (!res.ok) throw new Error(`failed to load stars: ${url} (HTTP ${res.status})`);
   return createStarCatalog(await res.arrayBuffer());
 }
 
