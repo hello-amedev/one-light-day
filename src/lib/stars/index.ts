@@ -7,7 +7,8 @@ export * from './types';
 export function createStarCatalog(buffer: ArrayBuffer): StarCatalog {
   const bytes = STAR_STRIDE * 4;
   if (buffer.byteLength % bytes !== 0) {
-    throw new Error(`星のデータの大きさが不正です(${buffer.byteLength} バイトは ${bytes} の倍数ではない)`);
+    // 開発者向けのエラー(画面には出さない)なので辞書に置かず、英語で書く
+    throw new Error(`invalid star data size: ${buffer.byteLength} bytes is not a multiple of ${bytes}`);
   }
   // 手元の端末は全てリトルエンディアン。bin もリトルエンディアンなので、そのまま Float32 として見る(コピーしない)
   const data = new Float32Array(buffer);
