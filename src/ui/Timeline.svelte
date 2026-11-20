@@ -37,19 +37,45 @@
     return store.minEt + Math.min(1, Math.max(0, (clientX - r.left) / r.width)) * span;
   }
 
+  /** 押した位置。ほとんど動かさずに離したら「押しただけ」とみなす */
+  let downX = 0;
+  let moved = false;
+  /** 押しただけの時に、名場面の刻みとみなす近さ(px) */
+  const SCENE_SNAP_PX = 10;
+
   function down(e: PointerEvent) {
     if (e.button !== 0) return;
     track.setPointerCapture(e.pointerId);
     dragging = true;
+    downX = e.clientX;
+    moved = false;
     // 動かしている間は再生を止める(再生に引っ張られて指から離れない)
     store.pause();
     store.setTime(etAt(e.clientX));
   }
   function move(e: PointerEvent) {
-    if (dragging) store.setTime(etAt(e.clientX));
+    if (!dragging) return;
+    if (Math.abs(e.clientX - downX) > 4) moved = true;
+    store.setTime(etAt(e.clientX));
   }
-  function up() {
+  function up(e: PointerEvent) {
+    if (!dragging) return;
     dragging = false;
+    if (moved || e.type !== 'pointerup') return;
+    // 名場面の刻みは、つまみと重なってもつまみをつかめるよう、ポインタでは直接押せないようにしてある。
+    // 動かさずに離した位置が刻みの近くなら、その名場面へ移る
+    const r = track.getBoundingClientRect();
+    let best: (typeof SCENES)[number] | null = null;
+    let bestPx = SCENE_SNAP_PX;
+    for (const s of SCENES) {
+      if (s.et > store.maxEt) continue;
+      const px = Math.abs(r.left + frac(s.et) * r.width - e.clientX);
+      if (px <= bestPx) {
+        best = s;
+        bestPx = px;
+      }
+    }
+    if (best) store.jumpScene(best.id);
   }
   function key(e: KeyboardEvent) {
     if (e.key === 'ArrowLeft') store.stepTime(-86400);
@@ -90,7 +116,7 @@
       <div class="thumb" style:left="{frac(view.state.et) * 100}%"></div>
     </div>
 
-    <!-- 名場面の刻み。つまみの操作と取り合わないよう、時間軸の兄弟として重ねる -->
+    <!-- 名場面の刻み。ポインタの操作は下の時間軸が受ける(つまみと重なってもつかめるように)。キーボードではこのボタンで移れる -->
     <div class="scenes">
       {#each SCENES as s (s.id)}
         <button
@@ -132,6 +158,12 @@
     cursor: pointer;
     touch-action: none;
     outline: none;
+  }
+  .track::before {
+    /* 両端(打ち上げの日と今日)にあるつまみも、外側からつかめるようにする。位置の計算は .track の箱のまま */
+    content: '';
+    position: absolute;
+    inset: 0 -12px;
   }
   .track:focus-visible {
     outline: var(--line-thin) solid var(--color-gold);
@@ -195,7 +227,7 @@
     pointer-events: none;
   }
   .scene {
-    pointer-events: auto;
+    pointer-events: none;
     position: absolute;
     top: 0;
     bottom: 0;

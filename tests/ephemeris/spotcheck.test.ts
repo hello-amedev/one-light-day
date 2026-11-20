@@ -33,6 +33,21 @@ describe('控えておいた Horizons の値との突き合わせ', () => {
     });
   }
 
+  it('今日のボイジャーから振り返ると、太陽はオリオン座の足元(リゲルの近く)に見える', () => {
+    // 黄道座標 → 赤道座標に戻して、赤経・赤緯で確かめる(軸の取り違えと裏返しの検査)
+    const et = etFromTdb(2026, 11, 18);
+    const v = eph.position('sun', 'voyager1', et);
+    const eps = (23.4392911 * Math.PI) / 180;
+    const xe = v[0];
+    const ye = Math.cos(eps) * v[1] - Math.sin(eps) * v[2];
+    const ze = Math.sin(eps) * v[1] + Math.cos(eps) * v[2];
+    const raHours = (((Math.atan2(ye, xe) * 12) / Math.PI) + 24) % 24;
+    const decDeg = (Math.asin(ze / Math.hypot(xe, ye, ze)) * 180) / Math.PI;
+    // 太陽は赤経 5時16分・赤緯 −12度あたり。リゲルは赤経 5時14.5分・赤緯 −8.2度
+    expect(Math.abs(raHours - 5.27)).toBeLessThan(0.1);
+    expect(Math.abs(decDeg - -12.2)).toBeLessThan(1);
+  });
+
   it('惑星から見たボイジャーと、ボイジャーから見た惑星が正反対になる(通過の区間)', () => {
     const et = etFromTdb(1979, 3, 5, 12, 5);
     const a = eph.position('voyager1', 'jupiter', et);
