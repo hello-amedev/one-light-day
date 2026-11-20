@@ -1,11 +1,12 @@
 <script lang="ts">
   // 画面の入口。位置と星のデータを読み込み、状態を作り、3D(canvas)とその上の操作の部品を重ねる。
-  // 3D の表示は別の担当が作る。まだ差し込み口(例外を投げる)なので、握って操作の部品だけで動かす。
+  // 3D の表示(src/stage)が作れなかった時(WebGL が無いなど)は、操作の部品だけで動かす。
   import { onDestroy, onMount } from 'svelte';
   import { etNow, loadEphemeris, type Ephemeris } from './lib/ephemeris';
   import { t } from './lib/i18n';
   import { loadStars, type StarCatalog } from './lib/stars';
   import { createStore, type AppStore } from './lib/store';
+  import { applyUrlState } from './lib/urlState';
   import { createStage, type Stage } from './stage';
   import UiLayer from './ui/UiLayer.svelte';
 
@@ -18,6 +19,8 @@
   let store = $state.raw<AppStore | null>(null);
   let eph = $state.raw<Ephemeris | null>(null);
   let stage = $state.raw<Stage | null>(null);
+  /** 操作しない間(UiLayer が知らせる)。目印の層と軌道の線を文字や目盛りと一緒に薄くする */
+  let idle = $state(false);
 
   let frame = 0;
   let stopLoop: (() => void) | undefined;
@@ -59,6 +62,8 @@
     const maxEt = Math.min(loadedEph.t1, etNow());
     const created = createStore({ minEt: loadedEph.t0, maxEt, initialEt: maxEt });
     eph = loadedEph;
+    // 確認用の URL(?t= ?view= ?look=)を当てる。3D を作る前に済ませ、最初の 1 コマから反映する
+    applyUrlState(created, location.search);
     store = created;
     status = 'ready';
 
@@ -76,6 +81,10 @@
     });
   });
 
+  $effect(() => {
+    stage?.setChromeVisible(!idle);
+  });
+
   onDestroy(() => {
     stopLoop?.();
     stage?.dispose();
@@ -85,10 +94,15 @@
 <main class="app">
   <!-- 重ね順: 3D の canvas → 目印の層(3D の担当が使う) → 操作の部品の層 -->
   <canvas class="stage" bind:this={canvas}></canvas>
-  <div class="markers" bind:this={overlay}></div>
+  <div class="markers" class:idle bind:this={overlay}></div>
 
   {#if status === 'ready' && store && eph}
-    <UiLayer {store} {eph} stats={stage ? () => stage!.stats() : undefined} />
+    <UiLayer
+      {store}
+      {eph}
+      stats={stage ? () => stage!.stats() : undefined}
+      onIdleChange={(v) => (idle = v)}
+    />
   {:else}
     <p class="message" role="status">{status === 'failed' ? com.loadFailed : com.loading}</p>
   {/if}
@@ -113,6 +127,11 @@
     /* 目印の層は 3D の担当が使う。星空の上の操作は下の canvas へ通す */
     pointer-events: none;
     overflow: hidden;
+    transition: opacity var(--dur-l) var(--ease-in-out);
+  }
+  /* 操作の部品と同じ薄さ・同じ速さで薄くする */
+  .markers.idle {
+    opacity: var(--idle-opacity);
   }
   .message {
     position: absolute;
