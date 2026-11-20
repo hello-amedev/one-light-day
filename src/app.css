@@ -1,8 +1,15 @@
 /*
  * トークンと土台のスタイル。
  * 色・フォント・線の太さ・動きの長さは、ここの変数だけに書く。部品(src/ui)は var(--...) で取る。
- * 第 2 段階では、この :root の値を差し替えて見た目の案を比べる。
+ * 見た目は、第 2 段階の比較であめさんが選んだ「計器盤」の案(数字だけ端末の案の字体)。2026-11-21
  */
+
+/* フォントは SIL Open Font License のものをパッケージから同梱する(外部へ読みに行かない)。
+   日本語は文字の範囲ごとに細かく分かれていて、画面で使った範囲だけが読み込まれる */
+@import '@fontsource/michroma/400.css';
+@import '@fontsource/share-tech-mono/400.css';
+@import '@fontsource/zen-kaku-gothic-new/400.css';
+
 :root {
   /* 色 */
   --color-space: #070a11; /* 宇宙の地の色 */
@@ -14,10 +21,21 @@
   /* 文字が星の上で読めるように周りへ落とす影 */
   --text-halo: 0 0 6px var(--color-space), 0 0 2px var(--color-space);
 
-  /* フォント。第 1 段階は端末のフォント(外部のフォントは読み込まない) */
-  --font-title: ui-sans-serif, system-ui, sans-serif;
-  --font-numeric: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --font-body: ui-sans-serif, system-ui, sans-serif;
+  /* フォント。題字は 1970 年代の計器盤に多かった幅の広い欧文、数字は当時の端末のような等幅、本文は細めのゴシック体。
+     数字の字体に日本語の字は無いので、「億km」などは本文の字体で出る */
+  --font-title: 'Michroma', ui-sans-serif, system-ui, sans-serif;
+  --font-numeric: 'Share Tech Mono', 'Zen Kaku Gothic New', ui-monospace, Menlo, monospace;
+  --font-body: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  /* 題字は幅の広い書体なので、スマホの幅で日付とぶつからない大きさに抑える */
+  --title-size: 0.9375rem;
+  --title-tracking: 0.28em;
+  --title-weight: 400;
+  --body-tracking: 0.08em;
+
+  /* 3D の表示(src/stage/theme.ts が読む): 星の明るさ・太陽の光のにじみ・軌道の線の濃さの倍率 */
+  --star-gain: 1;
+  --sun-glare: 1.3;
+  --orbit-opacity: 1;
 
   /* 文字の大きさ */
   --text-xs: 0.6875rem;
@@ -78,6 +96,7 @@ body {
   color: var(--color-text);
   font-family: var(--font-body);
   font-size: var(--text-m);
+  letter-spacing: var(--body-tracking);
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   /* 3D の上でのドラッグを、ブラウザのスクロールやピンチに取られない */

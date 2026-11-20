@@ -124,6 +124,29 @@
     font-family: var(--font-body);
     transition: opacity var(--dur-l) var(--ease-in-out);
   }
+  /* 計器盤のあしらい: 左上と右下に細い金の括弧。押す操作は素通しにする */
+  .ui::before,
+  .ui::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: var(--line-thin) solid var(--color-gold);
+    opacity: 0.75;
+    pointer-events: none;
+  }
+  .ui::before {
+    top: calc(var(--safe-top) + 6px);
+    left: calc(var(--safe-left) + 6px);
+    border-right: 0;
+    border-bottom: 0;
+  }
+  .ui::after {
+    bottom: calc(var(--safe-bottom) + 6px);
+    right: calc(var(--safe-right) + 6px);
+    border-left: 0;
+    border-top: 0;
+  }
   /* 完全には消さず、押す範囲も生かしたまま薄くする */
   .ui.idle {
     opacity: var(--idle-opacity);

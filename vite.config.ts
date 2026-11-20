@@ -13,6 +13,8 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
+    // フォントの小さな分割ファイルを CSS に埋め込まない(埋め込むと、使わない文字の分まで最初に読み込んでしまう)
+    assetsInlineLimit: 0,
   },
   test: {
     include: ['tests/**/*.test.ts'],

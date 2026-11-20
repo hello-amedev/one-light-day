@@ -21,7 +21,7 @@ const FALLBACK: Theme = {
   text: '#ebe5d3',
   textDim: '#979daa',
   starGain: 1,
-  sunGlare: 1,
+  sunGlare: 1.3,
   orbitOpacity: 1,
 };
 
