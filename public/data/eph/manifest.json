@@ -1,0 +1,171 @@
+{
+ "version": 1,
+ "frame": "ECLIPJ2000",
+ "generated": "2026-11-20",
+ "source": "NASA JPL Horizons",
+ "notes": [
+  "木星と土星は全期間を重心(5, 6)で作り、通過の区間だけ本当の中心(599, 699)を細かく入れている(docs/assets/ephemeris.md)"
+ ],
+ "bodies": {
+  "voyager1": {
+   "segments": [
+    {
+     "center": "sun",
+     "file": "voyager1.sun.bin",
+     "dtype": "f64",
+     "count": 863,
+     "t0": -704412034.9999577,
+     "t1": 1924948800
+    },
+    {
+     "center": "earth",
+     "file": "voyager1.earth.bin",
+     "dtype": "f64",
+     "count": 25,
+     "t0": -704412034.9999577,
+     "t1": -704152834.9999577
+    },
+    {
+     "center": "jupiter",
+     "file": "voyager1.jupiter.bin",
+     "dtype": "f64",
+     "count": 73,
+     "t0": -657503700.0000179,
+     "t1": -656985300.0000179
+    },
+    {
+     "center": "saturn",
+     "file": "voyager1.saturn.bin",
+     "dtype": "f64",
+     "count": 76,
+     "t0": -604066500.0000268,
+     "t1": -603548100.0000268
+    }
+   ]
+  },
+  "earth": {
+   "segments": [
+    {
+     "center": "sun",
+     "file": "earth.sun.bin",
+     "dtype": "f64",
+     "count": 7898,
+     "t0": -704412034.9999577,
+     "t1": 1924912765.0000424
+    }
+   ]
+  },
+  "moon": {
+   "segments": [
+    {
+     "center": "earth",
+     "file": "moon.earth.bin",
+     "dtype": "f64",
+     "count": 33,
+     "t0": -704412034.9999577,
+     "t1": -701870435.0000515
+    }
+   ]
+  },
+  "mercury": {
+   "segments": [
+    {
+     "center": "sun",
+     "file": "mercury.sun.bin",
+     "dtype": "f32",
+     "count": 5742,
+     "t0": -704412034.9999577,
+     "t1": 1924912765.0000424
+    }
+   ]
+  },
+  "venus": {
+   "segments": [
+    {
+     "center": "sun",
+     "file": "venus.sun.bin",
+     "dtype": "f32",
+     "count": 2753,
+     "t0": -704412034.9999577,
+     "t1": 1924912765.0000424
+    }
+   ]
+  },
+  "mars": {
+   "segments": [
+    {
+     "center": "sun",
+     "file": "mars.sun.bin",
+     "dtype": "f32",
+     "count": 1031,
+     "t0": -704412034.9999577,
+     "t1": 1924912765.0000424
+    }
+   ]
+  },
+  "jupiter": {
+   "segments": [
+    {
+     "center": "sun",
+     "file": "jupiter.sun.bin",
+     "dtype": "f64",
+     "count": 715,
+     "t0": -704412034.9999577,
+     "t1": 1924739965.0000424
+    },
+    {
+     "center": "sun",
+     "file": "jupiter.sun.window.bin",
+     "dtype": "f64",
+     "count": 49,
+     "t0": -657503700.0000179,
+     "t1": -656985300.0000179
+    }
+   ]
+  },
+  "saturn": {
+   "segments": [
+    {
+     "center": "sun",
+     "file": "saturn.sun.bin",
+     "dtype": "f64",
+     "count": 388,
+     "t0": -704412034.9999577,
+     "t1": 1924739965.0000424
+    },
+    {
+     "center": "sun",
+     "file": "saturn.sun.window.bin",
+     "dtype": "f64",
+     "count": 49,
+     "t0": -604066500.0000268,
+     "t1": -603548100.0000268
+    }
+   ]
+  },
+  "uranus": {
+   "segments": [
+    {
+     "center": "sun",
+     "file": "uranus.sun.bin",
+     "dtype": "f32",
+     "count": 49,
+     "t0": -704412034.9999577,
+     "t1": 1924739965.0000424
+    }
+   ]
+  },
+  "neptune": {
+   "segments": [
+    {
+     "center": "sun",
+     "file": "neptune.sun.bin",
+     "dtype": "f32",
+     "count": 54,
+     "t0": -704412034.9999577,
+     "t1": 1924739965.0000424
+    }
+   ]
+  }
+ }
+}
