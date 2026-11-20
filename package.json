@@ -1,0 +1,30 @@
+{
+  "name": "voyager",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:lan": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "node scripts/check-conventions.mjs && svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "verify": "npm run check && npm test && npm run build",
+    "data:eph": "node tools/ephemeris/build.mjs",
+    "data:stars": "node tools/stars/build.mjs"
+  },
+  "dependencies": {
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@types/node": "^26.6.6",
+    "@types/three": "^0.187.0",
+    "svelte": "^5.59.0",
+    "svelte-check": "^4.7.8",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}

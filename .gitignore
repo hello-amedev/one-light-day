@@ -1,0 +1,11 @@
+# Claude Code のローカル設定と作業コピー
+.claude/
+
+node_modules/
+dist/
+.DS_Store
+*.log
+.vite/
+
+# データを作る道具が取得した生データの置き場(加工後の public/data はコミットする)
+tools/**/cache/
