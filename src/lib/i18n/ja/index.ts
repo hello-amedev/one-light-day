@@ -3,9 +3,11 @@ import { about } from './about';
 import { bodies } from './bodies';
 import { caption } from './caption';
 import { common } from './common';
+import { events } from './events';
 import { fallback } from './fallback';
 import { hud } from './hud';
 import { intro } from './intro';
+import { menu } from './menu';
 import { photo } from './photo';
 import { scenes } from './scenes';
 import { timeline } from './timeline';
@@ -15,9 +17,11 @@ export const ja = {
   bodies,
   caption,
   common,
+  events,
   fallback,
   hud,
   intro,
+  menu,
   photo,
   scenes,
   timeline,
