@@ -34,10 +34,15 @@ GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改
   中身は Artifact の db の `checks` コレクション(ArtifactData の list で読む。項目を足す時は order を 10 刻みで、status は todo / ok / fix)。直したら status はあめさんに付け直してもらう
 - 星の数は約9千個のまま(あめさんの指定なし)。約4万個は `?stars=deep` で試せる
 
-直近の作業: (1) サイト名を「ONE LIGHT-DAY, 17,971 EARTH DAYS」に差し替え、(2) 告知なしの公開(リポジトリの改名と公開、Pages、検索よけ)と確認リストの用意。
+- **第6段階(本番での確認を受けた見直し)の仕様が確定し、実装は未着手**。中身は SPEC.md の「第6段階の仕様」1〜8、出来事の事実は docs/events.md
+  (本体の視点、自動の望遠の廃止と倍率、軌跡、アイコンとメニュー、時間軸の吹き出しと吸い付き、出来事、拡大した時の星空、垂線)
+
+直近の作業: (1) 告知なしの公開(リポジトリの改名と公開、Pages、検索よけ)と確認リストの用意、(2) あめさんの 8 つの要望を検証して第6段階の仕様にまとめた(実物どおりの 3D モデル (B)、上限を狭角カメラに、出来事を名場面に含める、速さの前後を数字で)。
 
 ## 3. 次回着手するなら
 
+0. **第6段階の実装**(SPEC.md「第6段階の仕様」)。部品が多いので agent-orchestration スキルで分担する。共通の土台(表示の切り替えの状態、出来事の一覧の形、倍率の計算)を先に 1 体で作ってから並行にする。
+   計測の道具は並行の担当に使わせない(§5)。終わったら本番に反映し、確認リスト(Artifact の db)に新しい項目を足す。古い項目のうち仕様で解決したもの(星の数など)は note に書いて status は変えない
 1. 確認リストを読んで、「直したい」の項目を直す: 文言(辞書を直したら `node scripts/dump-texts.mjs` で一覧を作り直す)、見え方(天の川の濃さは `--milkyway-gain`、太陽の光は `--sun-glare`)。
    直したら main に入れて、公開用のワークフローを手で動かす(`gh workflow run deploy.yml --repo hello-amedev/one-light-day --ref main`)
 2. 告知の前に: 検索よけを外して公開し直す(docs/publish.md「告知の前に」)。サイト名を変える時は、辞書 `src/lib/i18n/ja/intro.ts`、`index.html` の題と説明、`tools/shots/shoot.mjs` の題字を直して `public/og.jpg` を撮り直す
