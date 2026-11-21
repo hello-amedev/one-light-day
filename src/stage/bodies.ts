@@ -32,6 +32,12 @@ const STYLES: Record<Exclude<BodyId, 'voyager1' | 'earth' | 'sun'>, BodyStyle> =
   saturn: { color: '#dccb9a', dotPx: 5 },
   uranus: { color: '#a5d6da', dotPx: 4.5 },
   neptune: { color: '#6e8fe0', dotPx: 4.5 },
+  // 木星・土星の衛星の仮の色(型を満たすための置き。まだ描かない。描き方は次の担当が決める)
+  io: { color: '#e0c060', dotPx: 3 },
+  europa: { color: '#cdbfae', dotPx: 3 },
+  ganymede: { color: '#a89c8c', dotPx: 3 },
+  callisto: { color: '#7d7468', dotPx: 3 },
+  titan: { color: '#d9a850', dotPx: 3 },
 };
 const SUN_SPHERE_COLOR = '#fff6e2';
 const EARTH_DOT_PX = 5.5;

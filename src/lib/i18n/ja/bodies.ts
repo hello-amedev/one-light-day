@@ -12,5 +12,10 @@ export const bodies = {
   saturn: '土星',
   uranus: '天王星',
   neptune: '海王星',
+  io: 'イオ',
+  europa: 'エウロパ',
+  ganymede: 'ガニメデ',
+  callisto: 'カリスト',
+  titan: 'タイタン',
   voyager1: 'ボイジャー1号',
 } satisfies Record<BodyId, string>;

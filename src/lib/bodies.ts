@@ -12,6 +12,11 @@ export const BODY_IDS = [
   'saturn',
   'uranus',
   'neptune',
+  'io',
+  'europa',
+  'ganymede',
+  'callisto',
+  'titan',
   'voyager1',
 ] as const;
 
@@ -41,6 +46,11 @@ export const BODY_RADIUS_KM: Record<Exclude<BodyId, 'voyager1'>, number> = {
   saturn: 58_232,
   uranus: 25_362,
   neptune: 24_622,
+  io: 1_821.6,
+  europa: 1_560.8,
+  ganymede: 2_634.1,
+  callisto: 2_410.3,
+  titan: 2_574.7,
 };
 
 /** NASA JPL Horizons での天体の番号(データを作る道具が使う) */
@@ -55,5 +65,22 @@ export const HORIZONS_ID: Record<BodyId, string> = {
   saturn: '699',
   uranus: '799',
   neptune: '899',
+  io: '501',
+  europa: '502',
+  ganymede: '503',
+  callisto: '504',
+  titan: '606',
   voyager1: '-31',
 };
+
+/** 衛星と、それが回る親の天体。位置データは親を中心にした区間だけを持つ */
+export const SATELLITE_PARENT = {
+  moon: 'earth',
+  io: 'jupiter',
+  europa: 'jupiter',
+  ganymede: 'jupiter',
+  callisto: 'jupiter',
+  titan: 'saturn',
+} as const satisfies Partial<Record<BodyId, BodyId>>;
+
+export type SatelliteId = keyof typeof SATELLITE_PARENT;

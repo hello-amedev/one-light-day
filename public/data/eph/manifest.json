@@ -4,7 +4,8 @@
  "generated": "2026-11-20",
  "source": "NASA JPL Horizons",
  "notes": [
-  "木星と土星は全期間を重心(5, 6)で作り、通過の区間だけ本当の中心(599, 699)を細かく入れている(docs/assets/ephemeris.md)"
+  "木星と土星は全期間を重心(5, 6)で作り、通過の区間だけ本当の中心(599, 699)を細かく入れている(docs/assets/ephemeris.md)",
+  "衛星(イオ・エウロパ・ガニメデ・カリスト・タイタン)は親の惑星を中心にした通過の区間だけを持つ(docs/assets/ephemeris.md)"
  ],
  "bodies": {
   "voyager1": {
@@ -164,6 +165,66 @@
      "count": 54,
      "t0": -704412034.9999577,
      "t1": 1924739965.0000424
+    }
+   ]
+  },
+  "io": {
+   "segments": [
+    {
+     "center": "jupiter",
+     "file": "io.jupiter.bin",
+     "dtype": "f64",
+     "count": 129,
+     "t0": -657503700.0000179,
+     "t1": -656985300.0000179
+    }
+   ]
+  },
+  "europa": {
+   "segments": [
+    {
+     "center": "jupiter",
+     "file": "europa.jupiter.bin",
+     "dtype": "f64",
+     "count": 65,
+     "t0": -657503700.0000179,
+     "t1": -656985300.0000179
+    }
+   ]
+  },
+  "ganymede": {
+   "segments": [
+    {
+     "center": "jupiter",
+     "file": "ganymede.jupiter.bin",
+     "dtype": "f64",
+     "count": 33,
+     "t0": -657503700.0000179,
+     "t1": -656985300.0000179
+    }
+   ]
+  },
+  "callisto": {
+   "segments": [
+    {
+     "center": "jupiter",
+     "file": "callisto.jupiter.bin",
+     "dtype": "f64",
+     "count": 17,
+     "t0": -657503700.0000179,
+     "t1": -656985300.0000179
+    }
+   ]
+  },
+  "titan": {
+   "segments": [
+    {
+     "center": "saturn",
+     "file": "titan.saturn.bin",
+     "dtype": "f64",
+     "count": 17,
+     "t0": -604066500.0000268,
+     "t1": -603548100.0000268
     }
    ]
   }

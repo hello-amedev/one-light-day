@@ -176,12 +176,12 @@ describe('track', () => {
 });
 
 describe('manifest', () => {
-  it('区間の範囲が正しく、public/data/eph の合計が 900KB 以内', () => {
+  it('区間の範囲が正しく、public/data/eph の合計が 950KB 以内', () => {
     for (const entry of Object.values(manifest.bodies)) for (const s of entry!.segments) expect(s.t0).toBeLessThan(s.t1);
     expect(etFromUtcMs(Date.UTC(2026, 10, 20))).toBeLessThan(eph.t1);
     const dir = join(__dirname, '..', '..', 'public', 'data', 'eph');
     const total = readdirSync(dir).reduce((sum, f) => sum + statSync(join(dir, f)).size, 0);
-    expect(total).toBeLessThan(900 * 1024);
+    expect(total).toBeLessThan(950 * 1024);
   });
 });
 

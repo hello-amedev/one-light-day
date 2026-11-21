@@ -4,6 +4,9 @@
 //   node tools/ephemeris/build.mjs --verify    作ったデータを、Horizons への別の問い合わせと突き合わせる(目標を超えたら終了コード 1)
 //   node tools/ephemeris/build.mjs --fixtures  自動テスト用の正解を作る(tests/ephemeris/fixtures/horizons-samples.json)
 //
+// 2 つ目の引数に --only=moons を付けると、衛星の区間だけを作る・検証する(既存の manifest.json に足し込む。
+// 惑星などの既存の区間は触らない)。--fixtures では衛星の正解(horizons-moons.json)だけを作る。
+//
 // 取得した応答は tools/ephemeris/cache/ に保存する。2回目以降はそこから読むので、途中で失敗しても続きから進められる。
 // Horizons へは直列で、間を空けて頼む。作り方の詳細と出典は docs/assets/ephemeris.md。
 
@@ -16,6 +19,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CACHE_DIR = join(ROOT, 'tools', 'ephemeris', 'cache');
 const OUT_DIR = join(ROOT, 'public', 'data', 'eph');
 const FIXTURE_PATH = join(ROOT, 'tests', 'ephemeris', 'fixtures', 'horizons-samples.json');
+const MOON_FIXTURE_PATH = join(ROOT, 'tests', 'ephemeris', 'fixtures', 'horizons-moons.json');
 const API = 'https://ssd.jpl.nasa.gov/api/horizons.api';
 
 const DAY = 86400;
@@ -92,6 +96,29 @@ const SERIES = [
   { body: 'uranus', center: 'sun', cmd: '799', fallbackCmd: '7', ctr: '500@10', dtype: 'f32', tol: 12000, limit: 20000, pieces: [[T_START, T_END, 7200]] },
   { body: 'neptune', center: 'sun', cmd: '899', fallbackCmd: '8', ctr: '500@10', dtype: 'f32', tol: 12000, limit: 20000, pieces: [[T_START, T_END, 7200]] },
 ];
+
+// --- 衛星の区間 ---------------------------------------------------------------------------
+//
+// 衛星は親の惑星を中心にした区間だけを持つ(太陽中心の区間は無い。月と同じ扱い)。刻みは 1 分で、
+// 通過の区間(最接近の前後 3 日)だけ。誤差の許容値は 5km。
+// 衛星の中心から見たボイジャーの区間(body: 'voyager1', center: 衛星)は、「衛星の惑星中心 − ボイジャーの惑星中心」で
+// 出した相対位置が Horizons の直接の値と大きくずれる衛星にだけ足す(ずれの実測は docs/assets/ephemeris.md)。
+const MOON_TOL = 5;
+const MOON_LIMIT = 10;
+const moonSeries = (body, center, cmd, window) => ({
+  body, center, cmd, ctr: `500@${center === 'jupiter' ? '599' : '699'}`, dtype: 'f64', tol: MOON_TOL, limit: MOON_LIMIT,
+  group: 'moons', pieces: [[...window, 1]],
+});
+SERIES.push(
+  moonSeries('io', 'jupiter', '501', JUPITER_WINDOW),
+  moonSeries('europa', 'jupiter', '502', JUPITER_WINDOW),
+  moonSeries('ganymede', 'jupiter', '503', JUPITER_WINDOW),
+  moonSeries('callisto', 'jupiter', '504', JUPITER_WINDOW),
+  moonSeries('titan', 'saturn', '606', SATURN_WINDOW),
+);
+
+const ONLY = process.argv.find((a) => a.startsWith('--only='))?.slice(7);
+const selected = () => (ONLY ? SERIES.filter((s) => s.group === ONLY) : SERIES);
 
 const fileName = (s) => `${s.body}.${s.center}${s.tag ? '.' + s.tag : ''}.bin`;
 
@@ -322,7 +349,8 @@ function decodeBin(buf, count, dtype) {
 
 async function build() {
   mkdirSync(OUT_DIR, { recursive: true });
-  const manifest = {
+  const manifestPath = join(OUT_DIR, 'manifest.json');
+  const manifest = ONLY && existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : {
     version: 1,
     frame: 'ECLIPJ2000',
     generated: new Date().toISOString().slice(0, 10),
@@ -332,7 +360,7 @@ async function build() {
   };
   let totalBytes = 0;
   const report = [];
-  for (const series of SERIES) {
+  for (const series of selected()) {
     const name = fileName(series);
     console.log(`取得: ${name}`);
     const dense = await fetchDense(series);
@@ -341,7 +369,9 @@ async function build() {
     const buf = encodeBin(dense, idx, series.dtype);
     writeFileSync(join(OUT_DIR, name), buf);
     totalBytes += buf.length;
-    (manifest.bodies[series.body] ??= { segments: [] }).segments.push({
+    const entry = (manifest.bodies[series.body] ??= { segments: [] });
+    entry.segments = entry.segments.filter((x) => x.file !== name); // 作り直しの時は同じファイルの区間を置き換える
+    entry.segments.push({
       center: series.center,
       file: name,
       dtype: series.dtype,
@@ -352,9 +382,10 @@ async function build() {
     const step = (dense.t[dense.t.length - 1] - dense.t[0]) / idx.length / 3600;
     report.push(`${name.padEnd(30)} 元 ${String(dense.t.length).padStart(6)} 点 → ${String(idx.length).padStart(5)} 点  ${String(buf.length).padStart(7)} B  平均刻み ${step.toFixed(1)} 時間`);
   }
-  manifest.notes.push(
-    '木星と土星は全期間を重心(5, 6)で作り、通過の区間だけ本当の中心(599, 699)を細かく入れている(docs/assets/ephemeris.md)',
-  );
+  const note = '木星と土星は全期間を重心(5, 6)で作り、通過の区間だけ本当の中心(599, 699)を細かく入れている(docs/assets/ephemeris.md)';
+  if (!manifest.notes.includes(note)) manifest.notes.push(note);
+  const moonNote = '衛星(イオ・エウロパ・ガニメデ・カリスト・タイタン)は親の惑星を中心にした通過の区間だけを持つ(docs/assets/ephemeris.md)';
+  if (manifest.bodies.io && !manifest.notes.includes(moonNote)) manifest.notes.push(moonNote);
   writeFileSync(join(OUT_DIR, 'manifest.json'), JSON.stringify(manifest, null, 1) + '\n');
   console.log('\n' + report.join('\n'));
   console.log(`\n合計(.bin のみ): ${(totalBytes / 1024).toFixed(1)} KB`);
@@ -396,7 +427,7 @@ async function verify() {
   const manifest = JSON.parse(readFileSync(join(OUT_DIR, 'manifest.json'), 'utf8'));
   const rows = [];
   let failed = false;
-  for (const series of SERIES) {
+  for (const series of selected()) {
     const seg = manifest.bodies[series.body].segments.find((s) => s.file === fileName(series));
     const { t, d } = decodeBin(readFileSync(join(OUT_DIR, seg.file)), seg.count, seg.dtype);
     const rand = rng(0x5eed + seg.count);
@@ -451,8 +482,8 @@ async function verify() {
     console.log(`${r.seg.padEnd(26)}${String(r.count).padStart(7)}${String(r.bytes).padStart(10)}${String(r.n).padStart(7)}${r.mean.toFixed(3).padStart(12)}${r.worst.toFixed(3).padStart(12)}${String(r.limit).padStart(9)}  ${r.ok ? 'OK' : 'NG'}`);
   }
   const total = readdirSync(OUT_DIR).reduce((s, f) => s + statSync(join(OUT_DIR, f)).size, 0);
-  console.log(`\npublic/data/eph の合計: ${(total / 1024).toFixed(1)} KB(目標 900 KB 以内)`);
-  if (total > 900 * 1024) failed = true;
+  console.log(`\npublic/data/eph の合計: ${(total / 1024).toFixed(1)} KB(目標 950 KB 以内)`);
+  if (total > 950 * 1024) failed = true;
   if (failed) {
     console.error('目標を超えた区間があります');
     process.exit(1);
@@ -464,7 +495,41 @@ async function verify() {
 /** UTC のミリ秒 → UT の JD(Horizons に UT として渡す) */
 const jdUtFromMs = (ms) => ms / 86400000 + 2440587.5;
 
+/** 衛星の正解: 衛星ごとに区間の中の無作為な 8 点。親から見た衛星と、衛星から見たボイジャーを Horizons に直接頼む */
+async function moonFixtures() {
+  const rand = rng(20261121);
+  const utc = (y, mo, d, h = 0, mi = 0, s = 0) => Date.UTC(y, mo - 1, d, h, mi, s);
+  const defs = [
+    ['io', '501', 'jupiter', '599', utc(1979, 3, 2, 12, 30), utc(1979, 3, 8, 11, 30)],
+    ['europa', '502', 'jupiter', '599', utc(1979, 3, 2, 12, 30), utc(1979, 3, 8, 11, 30)],
+    ['ganymede', '503', 'jupiter', '599', utc(1979, 3, 2, 12, 30), utc(1979, 3, 8, 11, 30)],
+    ['callisto', '504', 'jupiter', '599', utc(1979, 3, 2, 12, 30), utc(1979, 3, 8, 11, 30)],
+    ['titan', '606', 'saturn', '699', utc(1980, 11, 9, 23, 30), utc(1980, 11, 15, 22, 30)],
+  ];
+  const samples = [];
+  for (const [body, cmd, parent, pcmd, from, to] of defs) {
+    const list = Array.from({ length: 8 }, () => Math.round((from + rand() * (to - from)) / 1000) * 1000).sort((a, b) => a - b);
+    const tlist = `'${list.map((ms) => jdUtFromMs(ms).toFixed(9)).join(' ')}'`;
+    const q = async (c, ctr, label) =>
+      parseRows(await horizons({ ...baseParams(c, ctr), TLIST: tlist, TLIST_TYPE: "'JD'", TIME_TYPE: "'UT'" }, `fixture-moon-${body}-${label}`)).map((r) => r.v.slice(0, 3));
+    const rel = await q(cmd, `500@${pcmd}`, 'parent');
+    const vm = await q('-31', `500@${cmd}`, 'voyager');
+    list.forEach((ms, i) => samples.push({ body, parent, utc: new Date(ms).toISOString().replace('.000Z', 'Z'), moonParent: rel[i], voyagerMoon: vm[i] }));
+  }
+  mkdirSync(dirname(MOON_FIXTURE_PATH), { recursive: true });
+  writeFileSync(
+    MOON_FIXTURE_PATH,
+    JSON.stringify(
+      { source: 'NASA JPL Horizons (API 1.2) 黄道 J2000・単位 km。時刻は UTC(Horizons に UT として渡した)。moonParent は親の惑星の中心から見た衛星、voyagerMoon は衛星の中心から見たボイジャー', generated: new Date().toISOString().slice(0, 10), samples },
+      null,
+      1,
+    ) + '\n',
+  );
+  console.log(`衛星の正解を ${samples.length} 点書き出した: ${MOON_FIXTURE_PATH}`);
+}
+
 async function fixtures() {
+  if (ONLY === 'moons') return moonFixtures();
   const rand = rng(20261120);
   const sec = (ms) => Math.round(ms / 1000) * 1000;
   const utc = (y, mo, d, h = 0, mi = 0, s = 0) => Date.UTC(y, mo - 1, d, h, mi, s);
@@ -529,11 +594,12 @@ async function fixtures() {
     ) + '\n',
   );
   console.log(`正解を ${samples.length} 点書き出した: ${FIXTURE_PATH}`);
+  await moonFixtures();
 }
 
 // --- 入口 -----------------------------------------------------------------------------------
 
-const mode = process.argv[2];
+const mode = process.argv.slice(2).find((a) => !a.startsWith('--only='));
 try {
   if (mode === '--verify') await verify();
   else if (mode === '--fixtures') await fixtures();

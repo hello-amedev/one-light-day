@@ -189,7 +189,7 @@ export function createEphemeris(manifest: Manifest, buffers: Record<string, Arra
     }
   };
 
-  /** body を center から見た位置・速度。直接の区間 → 逆向きの区間 → 太陽中心どうしの差、の順 */
+  /** body を center から見た位置・速度。直接の区間 → 逆向きの区間 → 同じ惑星を中心にした区間どうしの差 → 太陽中心どうしの差、の順 */
   const state = (body: BodyId, center: BodyId, et: number, p: number[], v: number[]): void => {
     if (body === center) {
       p[0] = p[1] = p[2] = v[0] = v[1] = v[2] = 0;
@@ -206,6 +206,22 @@ export function createEphemeris(manifest: Manifest, buffers: Record<string, Arra
       for (let k = 0; k < 3; k++) {
         p[k] = -p[k];
         v[k] = -v[k];
+      }
+      return;
+    }
+    // 2 つとも同じ惑星を中心にした区間を持つ時(通過の間のボイジャーと衛星、打ち上げ直後のボイジャーと月)は、
+    // その区間どうしの差で出す。太陽中心の位置どうしを引くと、Horizons のデータの食い違い
+    // (土星で約 1,360km)がそのまま乗り、タイタンとの距離(最接近 約 6,700km)が大きくずれる
+    const hubA = find(body, null, et);
+    const hubB = find(center, null, et);
+    if (hubA && hubB && hubA.center === hubB.center) {
+      evalSegment(hubA, et, p, v);
+      const hp = scratchP[0];
+      const hv = scratchV[0];
+      evalSegment(hubB, et, hp, hv);
+      for (let k = 0; k < 3; k++) {
+        p[k] -= hp[k];
+        v[k] -= hv[k];
       }
       return;
     }
