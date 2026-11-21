@@ -1,15 +1,20 @@
 // 引きの眺めで、ボイジャーの位置を読み取りやすくする線の描画(計算は guide.ts)。
-// ・ボイジャーから黄道面(惑星の並ぶ面)へ下ろした細い点線の垂線と、面の上の足もとの小さな輪
+// ・ボイジャーから黄道面(惑星の並ぶ面)へ下ろした細い点線の垂線と、面の上の足もとの小さな輪。
+//   普段は出さず、引きの眺めを回している間とその後の数秒、土星の場面の前後だけ、すっと現れて消える(第6段階。出す判断は guide.ts)
 // ・過ぎた名場面の、軌跡の上の小さな刻み(軌跡に直交する短い線)
-// ボイジャーの視界では出さない(カメラのずれが小さい間は消える)。
+// ・過ぎた単独の出来事の、軌跡の上の小さな点(名場面の刻みより小さく控えめ)
+// ボイジャーの視界では出さない(カメラのずれが小さい間は消える)。「星空だけを表示」の間はすべて消える。
 import * as THREE from 'three';
 import type { Ephemeris } from '../lib/ephemeris';
+import { STANDALONE_EVENTS } from '../lib/events';
 import { SCENES } from '../lib/scenes';
 import type { FrameContext } from './frame';
 import { projectToScreen } from './frame';
+import { viewLineFade } from './fade';
 import { footOnEcliptic } from './guide';
-import { smoothstep, type Vec3 } from './math';
+import type { Vec3 } from './math';
 import type { Theme } from './theme';
+import { makeDotTexture } from './textures';
 
 /** 垂線の点線の最大の数 */
 const MAX_DASHES = 56;
@@ -25,13 +30,13 @@ const FOOT_SEGMENTS = 40;
 const TICK_PX = 9;
 /** 刻みの向きを決める、前後の時間(秒) */
 const TICK_SPAN_S = 86400;
-/** カメラのずれがこの範囲(km)で、視界 → 引きの眺めの間に現れる */
-const FADE_FROM_KM = 1e8;
-const FADE_TO_KM = 1e9;
+/** 単独の出来事の点の大きさ(CSS px)。名場面の刻み(9px)より小さく */
+const EVENT_DOT_PX = 5;
 
 const DROP_OPACITY = 0.6;
 const FOOT_OPACITY = 0.8;
 const TICK_OPACITY = 0.95;
+const EVENT_OPACITY = 0.8;
 
 function makeLines<T extends THREE.Line | THREE.LineSegments | THREE.LineLoop>(
   ctor: new (g: THREE.BufferGeometry, m: THREE.Material) => T,
@@ -54,15 +59,39 @@ export class GuideLines {
   private drop: THREE.LineSegments;
   private foot: THREE.LineLoop;
   private ticks: THREE.LineSegments;
+  private eventDots: THREE.Points;
+  private eventMaterial: THREE.PointsMaterial;
+  private eventTexture: THREE.Texture;
   /** 名場面ごとの、太陽中心の位置と軌跡の向き(単位ベクトル。起動時に 1 回だけ作る) */
   private marks: { et: number; pos: Vec3; dir: Vec3 }[] = [];
+  /** 単独の出来事ごとの、時刻と太陽中心の位置 */
+  private events: { et: number; pos: Vec3 }[] = [];
   private foots: Vec3 = [0, 0, 0];
 
   constructor(eph: Ephemeris, theme: Theme) {
     this.drop = makeLines(THREE.LineSegments, MAX_DASHES * 2, theme.gold);
     this.foot = makeLines(THREE.LineLoop, FOOT_SEGMENTS, theme.gold);
     this.ticks = makeLines(THREE.LineSegments, SCENES.length * 2, theme.gold);
-    this.group.add(this.drop, this.foot, this.ticks);
+    this.eventTexture = makeDotTexture();
+    this.eventMaterial = new THREE.PointsMaterial({
+      map: this.eventTexture,
+      color: theme.gold,
+      size: EVENT_DOT_PX,
+      sizeAttenuation: false,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
+    const eventGeometry = new THREE.BufferGeometry();
+    eventGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(STANDALONE_EVENTS.length * 3), 3));
+    eventGeometry.setDrawRange(0, 0);
+    this.eventDots = new THREE.Points(eventGeometry, this.eventMaterial);
+    this.eventDots.frustumCulled = false;
+    this.eventDots.renderOrder = 3;
+    this.group.add(this.drop, this.foot, this.ticks, this.eventDots);
+    for (const e of STANDALONE_EVENTS) {
+      this.events.push({ et: e.et, pos: eph.position('voyager1', 'sun', e.et, [0, 0, 0]) });
+    }
     for (const s of SCENES) {
       const pos = eph.position('voyager1', 'sun', s.et, [0, 0, 0]);
       const before = eph.position('voyager1', 'sun', s.et - TICK_SPAN_S, [0, 0, 0]);
@@ -73,10 +102,13 @@ export class GuideLines {
     }
   }
 
-  /** voyagerSun: ボイジャーの太陽中心の位置、cameraSun: カメラの太陽中心の位置 */
-  update(ctx: FrameContext, voyagerSun: Vec3, cameraSun: Vec3): void {
+  /**
+   * voyagerSun: ボイジャーの太陽中心の位置、cameraSun: カメラの太陽中心の位置。
+   * lines: 線全体の濃さ(0〜1。「星空だけを表示」の間は 0)、drop: 垂線と足もとの輪の濃さ(0〜1。出すかどうかは guide.ts の dropWanted)
+   */
+  update(ctx: FrameContext, voyagerSun: Vec3, cameraSun: Vec3, lines = 1, drop = 1): void {
     const offsetLen = Math.hypot(ctx.offset[0], ctx.offset[1], ctx.offset[2]);
-    const fade = smoothstep(FADE_FROM_KM, FADE_TO_KM, offsetLen);
+    const fade = viewLineFade(offsetLen) * lines;
     const visible = fade > 0.001;
     this.group.visible = visible;
     if (!visible) return;
@@ -91,7 +123,7 @@ export class GuideLines {
     const sHere = projectToScreen(here, ctx);
     const sFoot = projectToScreen(foot, ctx);
     let dropOn = false;
-    if (sHere && sFoot) {
+    if (drop > 0.001 && sHere && sFoot) {
       const px = Math.hypot(sHere.x - sFoot.x, sHere.y - sFoot.y);
       if (px >= MIN_DROP_PX) {
         dropOn = true;
@@ -112,8 +144,8 @@ export class GuideLines {
     }
     this.drop.visible = dropOn;
     this.foot.visible = dropOn;
-    (this.drop.material as THREE.LineBasicMaterial).opacity = DROP_OPACITY * fade;
-    (this.foot.material as THREE.LineBasicMaterial).opacity = FOOT_OPACITY * fade;
+    (this.drop.material as THREE.LineBasicMaterial).opacity = DROP_OPACITY * fade * drop;
+    (this.foot.material as THREE.LineBasicMaterial).opacity = FOOT_OPACITY * fade * drop;
     if (dropOn) {
       // 面の上の輪: 黄道面(z = 0)に置いた円。半径は足もとの奥行きで 6.5px にあたる長さ
       const r = FOOT_RING_PX * kmPerPxAt(dotv(foot, forward));
@@ -155,12 +187,29 @@ export class GuideLines {
     this.ticks.geometry.setDrawRange(0, n * 2);
     (this.ticks.material as THREE.LineBasicMaterial).opacity = TICK_OPACITY * fade;
     this.ticks.visible = n > 0;
+
+    // ── 単独の出来事の点(過ぎたものだけ。名場面の刻みと同じ扱い) ──
+    const ev = (this.eventDots.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;
+    let k = 0;
+    for (const e of this.events) {
+      if (e.et > ctx.et) continue;
+      ev[k * 3] = e.pos[0] - cameraSun[0];
+      ev[k * 3 + 1] = e.pos[1] - cameraSun[1];
+      ev[k * 3 + 2] = e.pos[2] - cameraSun[2];
+      k++;
+    }
+    this.eventDots.geometry.attributes.position.needsUpdate = true;
+    this.eventDots.geometry.setDrawRange(0, k);
+    this.eventMaterial.size = EVENT_DOT_PX * ctx.pixelRatio;
+    this.eventMaterial.opacity = EVENT_OPACITY * fade;
+    this.eventDots.visible = k > 0;
   }
 
   dispose(): void {
-    for (const o of [this.drop, this.foot, this.ticks]) {
+    for (const o of [this.drop, this.foot, this.ticks, this.eventDots]) {
       o.geometry.dispose();
       (o.material as THREE.Material).dispose();
     }
+    this.eventTexture.dispose();
   }
 }

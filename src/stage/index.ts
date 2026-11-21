@@ -4,14 +4,16 @@
 // requestAnimationFrame を予約する。止まっている間は 1 回も描かない。
 import * as THREE from 'three';
 import type { Ephemeris } from '../lib/ephemeris';
-import type { StarCatalog } from '../lib/stars';
+import { loadStars, STAR_STRIDE, type StarCatalog } from '../lib/stars';
 import type { AppState, AppStore } from '../lib/store';
 import { Bodies } from './bodies';
 import { CraftView } from './craft';
 import { fovFromMagnification } from '../lib/zoom';
 import { basisFromForward, CameraRig, verticalFovDeg } from './camera';
+import { DROP_FADE_S, LINE_FADE_S, stepToward, viewLineFade } from './fade';
 import type { FrameContext } from './frame';
 import { attachInput } from './input';
+import { dropWanted, DROP_AFTER_DRAG_MS } from './guide';
 import { GuideLines } from './guideLines';
 import { OrbitLines, TrackLines } from './lines';
 import { MarkerLayer } from './markers';
@@ -23,6 +25,7 @@ import { createStarfield } from './starfield';
 import { JUMP_SECONDS } from './streak';
 import { PlanetStreaks } from './streaks';
 import { readTheme } from './theme';
+import { catalogHasDeepStars, deepStarsWanted, effectiveZoom, shouldLoadDeepStars, type DeepStarsLoad } from './zoomView';
 
 export interface StageOptions {
   canvas: HTMLCanvasElement;
@@ -76,6 +79,10 @@ export function createStage(options: StageOptions): Stage {
   // カメラは常に原点。near / far は線が切れない広さにとる(奥行きの判定は使わないので精度は問わない)
   const camera = new THREE.PerspectiveCamera(60, 1, 1, 1e13);
   const starfield = createStarfield(stars, theme.starGain);
+  // 暗い星(8 等まで)は、一定の倍率を超えたら 1 回だけ後から読み込んで足す。?stars=deep で最初から入っている時は足さない
+  const deepAtStart = catalogHasDeepStars(stars.data, STAR_STRIDE);
+  let deepLoad: DeepStarsLoad = deepAtStart ? 'ready' : 'none';
+  let deepOn = false;
   const orbits = new OrbitLines(eph, theme);
   const track = new TrackLines(eph, theme);
   const bodies = new Bodies(eph, theme, {
@@ -137,6 +144,13 @@ export function createStage(options: StageOptions): Stage {
   const stamps: number[] = [];
   let chrome = 1;
   let chromeTarget = 1;
+  // 表示の切り替えによる線の濃さ(0〜1)。軌道の線はメニューの「惑星の軌道」、そのほかの線は「星空だけを表示」で消える
+  let orbitFade = initial.display.orbits && !initial.starsOnly ? 1 : 0;
+  let lineFade = initial.starsOnly ? 0 : 1;
+  // 垂線: 引きの眺めを回した最後の時刻(ms。まだなら null)と、いまの濃さ
+  let lastOverviewDragMs: number | null = null;
+  let dropFade = 0;
+  let dropTimer: ReturnType<typeof setTimeout> | null = null;
 
   function invalidate(): void {
     if (disposed || scheduled) return;
@@ -167,7 +181,16 @@ export function createStage(options: StageOptions): Stage {
       const s = store.get();
       if (s.view === 'voyager') rig.dragVoyager(dx, dy, Math.min(width, height), fovFromMagnification(s.magnification));
       else if (s.view === 'craft') craft.drag(dx, dy);
-      else rig.dragOverview(dx, dy);
+      else {
+        rig.dragOverview(dx, dy);
+        // 回している間とその後の数秒は垂線を出す。数秒後に消える時の描き直しは、止まっている間も 1 回だけ予約する
+        lastOverviewDragMs = performance.now();
+        if (dropTimer !== null) clearTimeout(dropTimer);
+        dropTimer = setTimeout(() => {
+          dropTimer = null;
+          invalidate();
+        }, DROP_AFTER_DRAG_MS + 50);
+      }
       invalidate();
     },
     zoom(factor) {
@@ -211,6 +234,7 @@ export function createStage(options: StageOptions): Stage {
   // ── 1 コマ ──
   const voyagerSun: Vec3 = [0, 0, 0];
   const frameCtx: FrameContext = {
+    zoom: 1,
     et: 0,
     offset: [0, 0, 0],
     basis: { right: [1, 0, 0], up: [0, 0, 1], forward: [0, 1, 0] },
@@ -232,6 +256,13 @@ export function createStage(options: StageOptions): Stage {
     const state = store.get();
 
     chrome += Math.sign(chromeTarget - chrome) * Math.min(Math.abs(chromeTarget - chrome), dt / CHROME_FADE_S);
+    // 表示の切り替え(すっと 0.3 秒で薄れる・戻る)。止まっていた後の最初のコマ(dt = 0)は動かさず、次のコマから進む
+    const orbitsOn = state.display.orbits && !state.starsOnly;
+    const linesOn = !state.starsOnly;
+    orbitFade = stepToward(orbitFade, orbitsOn ? 1 : 0, dt, LINE_FADE_S);
+    lineFade = stepToward(lineFade, linesOn ? 1 : 0, dt, LINE_FADE_S);
+    const msSinceDrag = lastOverviewDragMs === null ? null : now - lastOverviewDragMs;
+    dropFade = stepToward(dropFade, dropWanted(state.et, msSinceDrag) ? 1 : 0, dt, DROP_FADE_S);
 
     eph.position('voyager1', 'sun', state.et, voyagerSun);
     const pose = rig.update(
@@ -243,6 +274,8 @@ export function createStage(options: StageOptions): Stage {
       state.view === 'craft' ? craft.pose(state.et, state.craftDistance) : null,
     );
 
+    const zoom = effectiveZoom(pose.fov);
+    frameCtx.zoom = zoom;
     const vfov = verticalFovDeg(pose.fov, width / height);
     camera.fov = vfov;
     camera.aspect = width / height;
@@ -276,18 +309,44 @@ export function createStage(options: StageOptions): Stage {
     if (Math.abs(deltaEt) > JUMP_SECONDS) deltaEt = 0; // 名場面への移動などの大きな飛びは弧にしない
     prevEt = state.et;
     streaks.classify(deltaEt);
-    const infos = bodies.update(frameCtx, streaks.active);
-    streaks.update(frameCtx, cameraSun, deltaEt, infos, chrome);
-    orbits.update(frameCtx, cameraSun, chrome, streaks.glow);
-    track.update(frameCtx, cameraSun);
-    guide.update(frameCtx, voyagerSun, cameraSun);
+    // 「星空だけを表示」の間は残像の弧を出さず、惑星は点で描く
+    const streakOn = lineFade > 0.001;
+    const infos = bodies.update(frameCtx, streakOn ? streaks.active : undefined);
+    streaks.update(frameCtx, cameraSun, deltaEt, infos, chrome, lineFade);
+    orbits.update(frameCtx, cameraSun, chrome, streakOn ? streaks.glow : undefined, orbitFade);
+    // 軌跡は引きの眺めだけ(ボイジャーの視界と本体の視点では足もとから延びる線が手前で切れる)
+    const offsetLen = Math.hypot(pose.offset[0], pose.offset[1], pose.offset[2]);
+    track.update(frameCtx, cameraSun, viewLineFade(offsetLen) * lineFade);
+    guide.update(frameCtx, voyagerSun, cameraSun, lineFade, dropFade);
     markers.update(infos, frameCtx, state.lookTarget, streaks.drawn);
 
     // 縮尺の物差し: 注視点(太陽とボイジャーの中点)の奥行きでの、画面の 1px あたりの km
     const midDepth =
       -0.5 * dot(voyagerSun, basis.forward) - dot(pose.offset, basis.forward);
-    scaleBar.update(state.view === 'overview' && !rig.transitioning, (2 * tanV * midDepth) / height);
-    const mwFading = milkyway.update(now, vfov);
+    scaleBar.update(state.view === 'overview' && !rig.transitioning && !state.starsOnly, (2 * tanV * midDepth) / height);
+    const mwFading = milkyway.update(now, zoom);
+
+    // 暗い星: ボイジャーの視界で ×3 を超えたら 1 回だけ読み込んで足し、ふっと現す(戻すと消える)
+    const userZoom = state.view === 'voyager' ? state.magnification : 1;
+    if (shouldLoadDeepStars(userZoom, deepLoad, deepAtStart)) {
+      deepLoad = 'loading';
+      void loadStars(import.meta.env.BASE_URL + 'data/stars/stars-deep.bin').then(
+        (more) => {
+          if (disposed) return;
+          starfield.addDeep(more);
+          deepLoad = 'ready';
+          invalidate();
+        },
+        (error) => {
+          // 読めなくても星空は動き続ける。くり返し読みに行かない
+          deepLoad = 'failed';
+          console.warn('deep stars failed to load', error);
+        },
+      );
+    }
+    deepOn = deepStarsWanted(userZoom, deepOn);
+    starfield.setDeepVisible(deepOn);
+    const starsFading = starfield.update(dt);
     notifyWatchers(infos);
 
     renderer.render(scene, camera);
@@ -301,7 +360,19 @@ export function createStage(options: StageOptions): Stage {
     stamps.push(now);
     while (stamps.length > 0 && now - stamps[0] > 1000) stamps.shift();
 
-    if (state.playing || rig.animating || bodies.animating || craft.animating || chrome !== chromeTarget || mwFading) invalidate();
+    const linesFading =
+      orbitFade !== (orbitsOn ? 1 : 0) || lineFade !== (linesOn ? 1 : 0) || dropFade !== (dropWanted(state.et, msSinceDrag) ? 1 : 0);
+    if (
+      state.playing ||
+      rig.animating ||
+      bodies.animating ||
+      craft.animating ||
+      chrome !== chromeTarget ||
+      mwFading ||
+      starsFading ||
+      linesFading
+    )
+      invalidate();
     else {
       lastFrameMs = null;
       prevEt = null;
@@ -334,6 +405,7 @@ export function createStage(options: StageOptions): Stage {
     dispose() {
       disposed = true;
       cancelAnimationFrame(rafId);
+      if (dropTimer !== null) clearTimeout(dropTimer);
       unsubscribe();
       detachInput();
       resizeObserver.disconnect();

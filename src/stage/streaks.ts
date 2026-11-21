@@ -113,10 +113,21 @@ export class PlanetStreaks {
     }
   }
 
-  /** bodies の更新の後に呼ぶ。点で描かれている惑星だけ弧にする(近くて球で描く惑星はそのまま) */
-  update(ctx: FrameContext, cameraSun: Vec3, deltaEt: number, infos: readonly BodyScreenInfo[], chrome: number): void {
+  /**
+   * bodies の更新の後に呼ぶ。点で描かれている惑星だけ弧にする(近くて球で描く惑星はそのまま)。
+   * fade: 「星空だけを表示」による濃さ 0〜1。ほぼ 0 の間は弧を出さない(惑星は点で描かれる。index.ts が bodies へ渡す集合を空にする)
+   */
+  update(
+    ctx: FrameContext,
+    cameraSun: Vec3,
+    deltaEt: number,
+    infos: readonly BodyScreenInfo[],
+    chrome: number,
+    fade = 1,
+  ): void {
     this.drawn.clear();
-    const dim = DIM + (1 - DIM) * chrome;
+    const off = fade <= 0.001;
+    const dim = (DIM + (1 - DIM) * chrome) * fade;
     const forward = ctx.basis.forward;
     const kmPerPxAt = (z: number): number => (2 * ctx.tanV * z) / ctx.height;
     const sign = deltaEt >= 0 ? 1 : -1;
@@ -127,7 +138,7 @@ export class PlanetStreaks {
       const asDot = !!info && info.radiusPx < DOT_BELOW_PX;
       item.mesh.visible = false;
       this.glow[item.index] = 0;
-      if (shape.mode === 'dot' || !asDot) continue;
+      if (off || shape.mode === 'dot' || !asDot) continue;
       this.drawn.add(item.id);
       this.glow[item.index] = shape.glow * dim;
       if (shape.mode === 'orbit' || shape.arcAlpha <= 0.01) continue;
