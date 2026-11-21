@@ -442,6 +442,8 @@ export class Bodies {
         fragmentShader: ringFragment,
         uniforms: { ...shared, uHalf: { value: half } },
         transparent: true,
+        // 色は環が出す光そのもの(alpha を掛ける前の値ではない)として出すので、混ぜ方を「色を足し、背景を alpha の分だけ隠す」にする
+        premultipliedAlpha: true,
         depthTest: false,
         depthWrite: false,
         side: THREE.DoubleSide,

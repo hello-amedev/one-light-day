@@ -159,14 +159,19 @@ export const ringFragment = /* glsl */ `
     float k = 2.3 * albedo * m0b / (m0b + mv);
     float rad;
     if (sameSide) {
-      // 太陽の側から見る: 反射した光
+      // 太陽の側から見る: 環の粒が跳ね返した光(1 回の散乱)。薄い C 環でも、太陽が低いと光は斜めに長く通るので十分に光る
       rad = k * (1.0 - exp(-tau * (1.0 / m0 + 1.0 / mv)));
     } else {
-      // 裏側から見る: 厚い所は暗く、薄い所は前へ散った光で明るい
-      rad = k * (0.9 * exp(-tau / m0) + 0.07) * alpha;
+      // 裏側から見る: 環を通り抜けながら散った光(1 回の散乱)。
+      // 濃い B 環は光を通さず暗く、薄い C 環・カッシーニの間隙・A 環のほうが明るい(ボイジャーが裏側から撮った写真と同じ並び)
+      float dd = 1.0 - m0 / mv;
+      dd = abs(dd) < 0.05 ? (dd < 0.0 ? -0.05 : 0.05) : dd;
+      rad = k * max(0.0, (exp(-tau / mv) - exp(-tau / m0)) / dd);
     }
     rad = rad * lit + 0.012 * albedo * alpha;
-    vec3 col = uTint * (rad / max(alpha, 0.002));
+    // 色は「環そのものが出す光」をそのまま足し、背景(星)は濃さの分だけ隠す(alpha は隠す割合)。
+    // 以前は光を alpha で割ってから混ぜていたので、薄い環の光が実際より弱く出て、C 環がほとんど見えなかった
+    vec3 col = uTint * rad;
     gl_FragColor = vec4(pow(min(col, vec3(1.6)), vec3(1.0 / 2.2)), alpha);
   }
 `;

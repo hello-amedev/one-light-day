@@ -55,8 +55,8 @@ export function ringSample(r: number): RingSample {
   let tau = 0;
   let albedo = 0.4;
 
-  // D 環: ごく淡い
-  tau += 0.018 * band(r, 66_900, 74_500, 800) * ringlets(r, 0.7);
+  // D 環: ごく淡い(実物は C 環よりはるかに薄く、ほとんど見えない)
+  tau += 0.004 * band(r, 66_900, 74_500, 800) * ringlets(r, 0.7);
   // C 環: 淡く透ける。内側ほど薄く、外側へ少し濃くなる。暗い色
   const cMix = band(r, 74_658, 92_000, 150);
   tau += cMix * (0.07 + 0.1 * smooth(74_658, 92_000, r)) * ringlets(r, 0.8);
