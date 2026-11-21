@@ -140,6 +140,11 @@ export class CameraRig {
     return this.lookAnim !== null || this.fovAnim !== null || this.trans !== null;
   }
 
+  /** 視点を切り替えている途中か(縮尺の物差しは、切り替えが終わるまで出さない) */
+  get transitioning(): boolean {
+    return this.trans !== null;
+  }
+
   get followTarget(): LookTarget | null {
     return this.follow;
   }

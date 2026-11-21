@@ -49,6 +49,10 @@ export const hud = {
   distanceMan: (value: string) => `${value}万km`,
   distanceKm: (value: string) => `${value}km`,
 
+  // ── 引きの眺めの縮尺の物差し ──
+  /** 物差しの読み上げ。length は「10億km」のような長さ */
+  scaleBarAria: (length: string) => `縮尺の物差し（この長さが${length}）`,
+
   // ── 日付 ──
   /** 日本時間の併記。時刻が意味を持つ所だけで使う */
   jstDateTime: (y: number, mo: number, d: number, h: number, mi: number, s: number) =>

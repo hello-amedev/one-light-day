@@ -27,7 +27,7 @@ import type { Theme } from './theme';
 import { makeCoreTexture, makeDotTexture, makeGlowTexture, makeSpikeTexture } from './textures';
 
 /** この半径(px)より小さい球は、光の点で描く */
-const DOT_BELOW_PX = 1.5;
+export const DOT_BELOW_PX = 1.5;
 /** 画像を読み込み始める半径(px) */
 const LOAD_ABOVE_PX = 4;
 /** 画像へなじませる時間(秒) */
@@ -50,7 +50,7 @@ interface BodyStyle {
 }
 
 // 画像が来るまで(と、画像を持たない天体)の色。地球だけ app.css の --color-earth(淡い青)を使う
-const STYLES: Record<Exclude<DrawnId, 'earth' | 'sun'>, BodyStyle> = {
+export const STYLES: Record<Exclude<DrawnId, 'earth' | 'sun'>, BodyStyle> = {
   mercury: { color: '#a39d92', dotPx: 4 },
   venus: { color: '#dcc590', dotPx: 5 },
   moon: { color: '#bdbab2', dotPx: 3.5 },
@@ -67,7 +67,8 @@ const STYLES: Record<Exclude<DrawnId, 'earth' | 'sun'>, BodyStyle> = {
   titan: { color: '#d99a45', dotPx: 3 },
 };
 const SUN_SPHERE_COLOR = '#fff6e2';
-const EARTH_DOT_PX = 5.5;
+/** 地球の点の大きさ(CSS px)。ほかの惑星は STYLES */
+export const EARTH_DOT_PX = 5.5;
 
 /** 画像を貼る天体(public/textures の名前と同じ) */
 const IMAGE_BODIES: ReadonlySet<DrawnId> = new Set(['earth', 'moon', 'jupiter', 'io', 'europa', 'ganymede', 'callisto']);
@@ -463,8 +464,8 @@ export class Bodies {
     return this.fading;
   }
 
-  /** 位置を更新し、目印の層に渡す画面の情報を返す */
-  update(ctx: FrameContext): BodyScreenInfo[] {
+  /** 位置を更新し、目印の層に渡す画面の情報を返す。streaking は、点の代わりに弧で描く惑星 */
+  update(ctx: FrameContext, streaking?: ReadonlySet<BodyId>): BodyScreenInfo[] {
     const eph = this.eph;
     const et = ctx.et;
     const nowMs = performance.now();
@@ -505,7 +506,8 @@ export class Bodies {
       if (rPx >= DOT_BELOW_PX) {
         this.drawSphere(item, placement, rPx, ctx, nowMs);
       } else if (item.dot) {
-        item.dot.visible = true;
+        // 早回しで残像の弧(streaks.ts)に替える惑星は、点を出さない
+        item.dot.visible = !streaking?.has(id);
         item.dot.position.set(px, py, pz);
         item.dot.scale.setScalar(item.dotPx * kmPerPx);
       }

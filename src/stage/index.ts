@@ -10,12 +10,16 @@ import { Bodies } from './bodies';
 import { basisFromForward, CameraRig, verticalFovDeg } from './camera';
 import type { FrameContext } from './frame';
 import { attachInput } from './input';
+import { GuideLines } from './guideLines';
 import { OrbitLines, TrackLines } from './lines';
 import { MarkerLayer } from './markers';
 import { createMilkyway, pickMilkywayVariant } from './milkyway';
-import { DEG, add, type Vec3 } from './math';
+import { DEG, add, dot, type Vec3 } from './math';
 import type { BodyId } from '../lib/bodies';
+import { ScaleBarView } from './scaleBarView';
 import { createStarfield } from './starfield';
+import { JUMP_SECONDS } from './streak';
+import { PlanetStreaks } from './streaks';
 import { readTheme } from './theme';
 
 export interface StageOptions {
@@ -76,7 +80,10 @@ export function createStage(options: StageOptions): Stage {
     maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
     onTextureLoaded: () => invalidate(),
   });
+  const streaks = new PlanetStreaks(eph, theme);
+  const guide = new GuideLines(eph, theme);
   const markers = new MarkerLayer(overlay, eph);
+  const scaleBar = new ScaleBarView(overlay);
   // 天の川は最初のコマを描いた後に読み込む(星空が先に出る)
   const milkyway = createMilkyway({
     baseUrl: import.meta.env.BASE_URL + 'textures/',
@@ -88,7 +95,7 @@ export function createStage(options: StageOptions): Stage {
     gain: theme.milkywayGain,
     onLoad: () => invalidate(),
   });
-  scene.add(milkyway.object, starfield.object, orbits.group, track.group, bodies.group);
+  scene.add(milkyway.object, starfield.object, orbits.group, track.group, guide.group, streaks.group, bodies.group);
 
   const rig = new CameraRig(eph);
   const initial = store.get();
@@ -117,6 +124,8 @@ export function createStage(options: StageOptions): Stage {
   let scheduled = false;
   let rafId = 0;
   let lastFrameMs: number | null = null;
+  /** 前のコマの時刻(et)。止まっている間は null に戻す(止まった後の最初のコマを「飛んだ」と見ない) */
+  let prevEt: number | null = null;
   let frames = 0;
   const stamps: number[] = [];
   let chrome = 1;
@@ -240,10 +249,22 @@ export function createStage(options: StageOptions): Stage {
 
     // カメラの太陽中心の位置(線の頂点を相対位置に直すのに使う)
     const cameraSun = add(voyagerSun, pose.offset);
-    const infos = bodies.update(frameCtx);
-    orbits.update(frameCtx, cameraSun, chrome);
+    // 早回しの判断は、再生の設定ではなく、前のコマから実際に進んだ時刻で行う
+    let deltaEt = prevEt === null ? 0 : state.et - prevEt;
+    if (Math.abs(deltaEt) > JUMP_SECONDS) deltaEt = 0; // 名場面への移動などの大きな飛びは弧にしない
+    prevEt = state.et;
+    streaks.classify(deltaEt);
+    const infos = bodies.update(frameCtx, streaks.active);
+    streaks.update(frameCtx, cameraSun, deltaEt, infos, chrome);
+    orbits.update(frameCtx, cameraSun, chrome, streaks.glow);
     track.update(frameCtx, cameraSun);
-    markers.update(infos, frameCtx, state.lookTarget);
+    guide.update(frameCtx, voyagerSun, cameraSun);
+    markers.update(infos, frameCtx, state.lookTarget, streaks.drawn);
+
+    // 縮尺の物差し: 注視点(太陽とボイジャーの中点)の奥行きでの、画面の 1px あたりの km
+    const midDepth =
+      -0.5 * dot(voyagerSun, basis.forward) - dot(pose.offset, basis.forward);
+    scaleBar.update(state.view === 'overview' && !rig.transitioning, (2 * tanV * midDepth) / height);
     const mwFading = milkyway.update(now, vfov);
     notifyWatchers(infos);
 
@@ -258,7 +279,10 @@ export function createStage(options: StageOptions): Stage {
     while (stamps.length > 0 && now - stamps[0] > 1000) stamps.shift();
 
     if (state.playing || rig.animating || bodies.animating || chrome !== chromeTarget || mwFading) invalidate();
-    else lastFrameMs = null;
+    else {
+      lastFrameMs = null;
+      prevEt = null;
+    }
   }
 
   invalidate();
@@ -293,6 +317,9 @@ export function createStage(options: StageOptions): Stage {
       canvas.removeEventListener('webglcontextlost', onLost);
       canvas.removeEventListener('webglcontextrestored', onRestored);
       markers.dispose();
+      scaleBar.dispose();
+      streaks.dispose();
+      guide.dispose();
       starfield.dispose();
       milkyway.dispose();
       orbits.dispose();

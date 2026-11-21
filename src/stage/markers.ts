@@ -220,7 +220,8 @@ export class MarkerLayer {
     }
   }
 
-  update(infos: BodyScreenInfo[], ctx: FrameContext, lookTarget: LookTarget | null): void {
+  /** hidden: 名前を出さない天体(早回しで残像の弧に替えた惑星。名前が飛び回らないように) */
+  update(infos: BodyScreenInfo[], ctx: FrameContext, lookTarget: LookTarget | null, hidden?: ReadonlySet<BodyId>): void {
     const seen = new Set<BodyId>();
     this.collectMoons(infos, ctx);
     this.order.length = 0;
@@ -229,6 +230,7 @@ export class MarkerLayer {
         const s = info.screen;
         // カメラの後ろと、画面の外は出さない
         if (!s || s.x < -20 || s.y < -20 || s.x > ctx.width + 20 || s.y > ctx.height + 20) continue;
+        if (hidden?.has(info.id)) continue;
         this.order.push({ info, priority: priorityOf(info.id, lookTarget) });
       }
     }
