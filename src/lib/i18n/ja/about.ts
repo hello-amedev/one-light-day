@@ -107,6 +107,7 @@ export const about = {
             '土星の縞と環の濃淡・色、タイタンのもやは、公表されている寸法をもとに、プログラムで描いた絵です',
             '太陽圏（太陽の風が届く範囲）の境は、形が分かっていないので描いていません',
             '木星と土星の衛星は、通過の前後3日だけ描きます。ほかの時期と、ほかの衛星は描いていません',
+            'ボイジャー本体の向き。アンテナは地球へ向けていますが、アンテナの軸のまわりの向きは、実際の記録どおりではありません',
           ],
         },
       ],
@@ -143,6 +144,7 @@ export const about = {
               name: 'U.S. Geological Survey（Galileo SSI and Voyager images）',
             },
             { use: 'ペイル・ブルー・ドットの写真', name: 'NASA/JPL-Caltech（2020年の再処理版）' },
+            { use: 'ボイジャー1号の3Dモデル', name: 'NASA 3D Resources（Voyager Probe (B)）' },
             {
               use: 'フォント',
               name: 'Michroma、Share Tech Mono、Zen Kaku Gothic New',
@@ -154,6 +156,12 @@ export const about = {
               name: 'three.js',
               license: 'MIT License',
               href: 'https://opensource.org/license/mit',
+            },
+            {
+              use: '3Dモデルの展開',
+              name: 'Draco（Google）',
+              license: 'Apache License 2.0',
+              href: 'https://www.apache.org/licenses/LICENSE-2.0',
             },
           ],
         },

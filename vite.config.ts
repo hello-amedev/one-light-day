@@ -5,10 +5,23 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 /** このファイルがあるフォルダ(末尾は /) */
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
 
+/**
+ * three.js の DRACOLoader は、既定の復号の部品を `new URL('../libs/draco/...', import.meta.url)` で指しているので、
+ * そのままだとビルドが使わない復号のファイル(約 1.3MB)を書き出す。サイトは public/draco/ に同梱した版を
+ * setDecoderPath で指定して使う(src/stage/craft.ts)ので、既定の URL を空にして書き出させない
+ */
+const dropDracoDefaultUrls = {
+  name: 'drop-draco-default-urls',
+  transform(code: string, id: string) {
+    if (!id.replace(/\\/g, '/').endsWith('three/examples/jsm/loaders/DRACOLoader.js')) return null;
+    return code.replace(/new URL\(\s*'\.\.\/libs\/draco\/[^']+',\s*import\.meta\.url\s*\)\.toString\(\)/g, "''");
+  },
+};
+
 export default defineConfig({
   // ame-dev.com/<名前>/ のような下の階層に置いても動くよう、相対パスで出す
   base: './',
-  plugins: [svelte()],
+  plugins: [svelte(), dropDracoDefaultUrls],
   server: {
     watch: {
       // このフォルダの直下の .claude/(その中に別の checkout=作業コピーがある)とビルドの成果物の変化で、

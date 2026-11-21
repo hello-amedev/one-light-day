@@ -244,6 +244,7 @@
 | 箇条書き | 土星の縞と環の濃淡・色、タイタンのもやは、公表されている寸法をもとに、プログラムで描いた絵です |
 | 箇条書き | 太陽圏（太陽の風が届く範囲）の境は、形が分かっていないので描いていません |
 | 箇条書き | 木星と土星の衛星は、通過の前後3日だけ描きます。ほかの時期と、ほかの衛星は描いていません |
+| 箇条書き | ボイジャー本体の向き。アンテナは地球へ向けていますが、アンテナの軸のまわりの向きは、実際の記録どおりではありません |
 
 #### 4 節　位置・星・画像・フォントの出典
 
@@ -258,8 +259,10 @@
 | 出典 | 木星　NASA/JPL/Space Science Institute（Cassini, December 2000） |
 | 出典 | イオ・エウロパ・ガニメデ・カリスト　U.S. Geological Survey（Galileo SSI and Voyager images） |
 | 出典 | ペイル・ブルー・ドットの写真　NASA/JPL-Caltech（2020年の再処理版） |
+| 出典 | ボイジャー1号の3Dモデル　NASA 3D Resources（Voyager Probe (B)） |
 | 出典 | フォント　Michroma、Share Tech Mono、Zen Kaku Gothic New　SIL Open Font License 1.1（https://openfontlicense.org/） |
 | 出典 | 3Dの表示　three.js　MIT License（https://opensource.org/license/mit） |
+| 出典 | 3Dモデルの展開　Draco（Google）　Apache License 2.0（https://www.apache.org/licenses/LICENSE-2.0） |
 
 #### 5 節　問い合わせ先
 
