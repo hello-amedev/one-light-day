@@ -298,6 +298,8 @@
     letter-spacing: var(--title-tracking, 0.22em);
     color: var(--color-text);
     text-shadow: var(--text-halo);
+    /* 題字は 1 行のまま(スマホの縦画面で右上のメニューのアイコンが増え、幅が足りず折れていた) */
+    white-space: nowrap;
   }
   /* 右上: 日付と、その右のメニューのアイコン */
   .top {
@@ -387,6 +389,10 @@
   /* スマホの縦画面: 題字と日付は上、数字・操作・時間軸は親指が届く下側に集める。
      向くと、再生・速さ・送りは 1 行に並べ、時間軸はその下の全幅にする */
   @media (max-width: 640px) and (orientation: portrait) {
+    /* 幅の狭い画面では、題字の字の間を詰めて右上の日付と離す */
+    .title {
+      letter-spacing: 0.12em;
+    }
     .ui {
       grid-template-columns: minmax(0, 1fr) auto;
       grid-template-rows: auto 1fr auto auto auto;

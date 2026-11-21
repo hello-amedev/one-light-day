@@ -34,15 +34,14 @@ GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改
   中身は Artifact の db の `checks` コレクション(ArtifactData の list で読む。項目を足す時は order を 10 刻みで、status は todo / ok / fix)。直したら status はあめさんに付け直してもらう
 - 星の数は約9千個のまま(あめさんの指定なし)。約4万個は `?stars=deep` で試せる
 
-- **第6段階(本番での確認を受けた見直し)の仕様が確定し、実装は未着手**。中身は SPEC.md の「第6段階の仕様」1〜8、出来事の事実は docs/events.md
-  (本体の視点、自動の望遠の廃止と倍率、軌跡、アイコンとメニュー、時間軸の吹き出しと吸い付き、出来事、拡大した時の星空、垂線)
+- **第6段階(本番での確認を受けた見直し)は実装が終わり、手元で確かめた。本番への反映と確認リストへの項目の追加は、あめさんの OK 待ち**。中身は SPEC.md の「第6段階の仕様」1〜8、
+  確かめたこと・確かめていないことは PROGRESS.md の第6段階。出来事の文は下書き(docs/texts.md の「出来事」)。確認用の URL に `&mag=<倍率>`・`&view=craft`・`&open=menu|look|stars` を足した
 
 直近の作業: (1) 告知なしの公開(リポジトリの改名と公開、Pages、検索よけ)と確認リストの用意、(2) あめさんの 8 つの要望を検証して第6段階の仕様にまとめた(実物どおりの 3D モデル (B)、上限を狭角カメラに、出来事を名場面に含める、速さの前後を数字で)。
 
 ## 3. 次回着手するなら
 
-0. **第6段階の実装**(SPEC.md「第6段階の仕様」)。部品が多いので agent-orchestration スキルで分担する。共通の土台(表示の切り替えの状態、出来事の一覧の形、倍率の計算)を先に 1 体で作ってから並行にする。
-   計測の道具は並行の担当に使わせない(§5)。終わったら本番に反映し、確認リスト(Artifact の db)に新しい項目を足す。古い項目のうち仕様で解決したもの(星の数など)は note に書いて status は変えない
+0. **第6段階の反映**: あめさんの OK を取ってから、main に入れて公開用のワークフローを動かし、確認リスト(Artifact の db)に第6段階の項目を足す。古い項目のうち仕様で解決したもの(星の数など)は note に書いて status は変えない
 1. 確認リストを読んで、「直したい」の項目を直す: 文言(辞書を直したら `node scripts/dump-texts.mjs` で一覧を作り直す)、見え方(天の川の濃さは `--milkyway-gain`、太陽の光は `--sun-glare`)。
    直したら main に入れて、公開用のワークフローを手で動かす(`gh workflow run deploy.yml --repo hello-amedev/one-light-day --ref main`)
 2. 告知の前に: 検索よけを外して公開し直す(docs/publish.md「告知の前に」)。サイト名を変える時は、辞書 `src/lib/i18n/ja/intro.ts`、`index.html` の題と説明、`tools/shots/shoot.mjs` の題字を直して `public/og.jpg` を撮り直す
@@ -71,6 +70,8 @@ GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改
 - 開発サーバーの監視の除外に `**/.claude/**` と書くと、作業コピー自身(`.claude/worktrees/` の下)の編集が反映されなくなる
 - 辞書に文言を足したら、フォント(`npm run fonts`。verify の最初でも走る)と文言の一覧(`node scripts/dump-texts.mjs`。新しい領域は道具の AREAS / PLACES に足す)を作り直す。足りないと `npm run check` が止まる
 - 計測の道具(`tools/perf/measure.mjs`)は、同じ時間に 2 つ動かすとぶつかって失敗する(Chrome の遠隔操作のポートが同じ)。並行で作業する担当には使わせず、監督が統合の後に 1 回走らせる
+- 開発サーバーが Svelte の CSS の書き換えを取りこぼすことがある(ファイルは正しいのに古いスタイルのまま)。`npx vite --force` で立て直す
+- 日本語のフォントに無い字(「→」など)は辞書に書けない(`npm run check` のフォントの検査で止まる)
 
 ## 6. 起動と検査
 

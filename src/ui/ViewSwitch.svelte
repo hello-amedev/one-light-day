@@ -55,7 +55,8 @@
     }
     .name {
       flex-basis: 100%;
-      margin: calc(var(--space-1) * -1) 0 0 var(--space-2);
+      /* 選択中の金の下線と重ならないよう、少し下げる */
+      margin: var(--space-1) 0 0 var(--space-2);
     }
   }
 </style>

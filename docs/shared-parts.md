@@ -37,26 +37,34 @@
 | 表示の切り替え(名前と目印・軌道・文)と「星空だけを表示」 | `state.display` / `store.setDisplay` / `state.starsOnly` / `store.setStarsOnly`。ブラウザに覚えるのは `loadDisplayPrefs` / `saveDisplayPrefs`(App.svelte がつなぐ) | `src/lib/store/`・`src/lib/displayPrefs.ts` | |
 | 出来事の一覧(名場面に含める 5 件・単独の刻み 4 件)・通り過ぎた出来事 | `STORY_EVENTS` / `STANDALONE_EVENTS` / `eventsOfScene` / `eventsCrossed`。文は `t().events[id]` | `src/lib/events.ts` | |
 | 名場面・出来事へ移る、移った先を知る | `store.jumpScene` / `store.jumpEvent`、`state.arrival` と `state.arrivalSeq` | `src/lib/store/` | |
+| 時間軸の刻みを指した判定・吸い付き | `nearestMark` / `snapPull` / `HOVER_RADIUS` / `SNAP_RADIUS` | `src/ui/timelineSnap.ts` | |
+| 名場面・出来事の文を出す順番と時間、通り過ぎた文、操作での消し方 | `enqueue` / `advance` / `captionsCrossed` / `actionFor` | `src/ui/captionQueue.ts` | |
+| 出来事の日付(月まで・期間)・速さの整形 | `formatEventDate` / `formatSpeed` | `src/lib/format.ts` | |
 | スイングバイの前後の太陽に対する速さ | `swingbySpeeds(eph, 'jupiter' \| 'saturn')`(前後 30 日) | `src/lib/swingby.ts` | |
 
 ## 画面の部品
 
 | やりたいこと | 使うもの | 場所 |
 |---|---|---|
-| ボタンを置く(文字だけ。選択中は金の下線。押す範囲は指で 44px) | `UiButton`(`pressed` で選択中、`label` で読み上げ) | `src/ui/UiButton.svelte` |
+| ボタンを置く(文字かアイコン。選択中は金の下線。押す範囲は指で 44px。指した時の吹き出し) | `UiButton`(`icon`・`tip`・`pressed`・`expanded`・`label`) | `src/ui/UiButton.svelte` |
+| アイコンを描く(視界・引き・本体・メニュー・向く・再生・停止) | `Icon` | `src/ui/Icon.svelte` |
+| 右上のメニュー(表示の切り替え・星空だけ・このサイトについて) | `MainMenu` | `src/ui/MainMenu.svelte` |
+| 一覧の開閉と矢印キーの操作 | `use:popover`、`nextMenuIndex` | `src/ui/popover.ts`・`src/ui/controls.ts` |
+| 右下の距離の上の倍率・機体からの距離 | `ReadoutExtra`(判断は `readoutExtra`) | `src/ui/ReadoutExtra.svelte`・`src/ui/controls.ts` |
+| 速さの次の値と送る量・向く相手の候補・星空だけの案内の選び方 | `nextRate` / `stepUnit` / `stepSeconds` / `chooseLookTargets` / `starsOnlyHintKind` | `src/ui/controls.ts` |
 | 矢印を描く(送り・名場面の移動) | `Chevron`(`bar` で名場面用) | `src/ui/Chevron.svelte` |
 | 数字のブロック(ラベル・大きい数字・補足) | `Readout`(日付も距離もこれ。補足の行は空でも高さを残す) | `src/ui/Readout.svelte` |
 | 数字が変わる時に桁を回す(ゆっくり変わる時だけ。判断 `planRoll`) | `RollingNumber`(`Readout` の大きい数字で使っている) | `src/ui/RollingNumber.svelte`・`src/ui/rolling.ts` |
 | 3D が使えない端末の表示(静止画と案内。確認は `?no3d`) | `Fallback` | `src/ui/Fallback.svelte` |
 | 共有用の画像・静止画の撮り直し、表示の確認のスクリーンショット | `tools/shots/shoot.mjs` | `tools/shots/` |
-| 送りダイヤル 1 つ(‹ 1日 ›) | `StepDial` | `src/ui/StepDial.svelte` |
-| 視点の切り替え | `ViewSwitch` | `src/ui/ViewSwitch.svelte` |
-| 向くボタン(木星・土星・月は近い時期だけ) | `LookButtons` | `src/ui/LookButtons.svelte` |
-| 再生・速さ・送りダイヤル | `PlayControls` | `src/ui/PlayControls.svelte` |
+| 送り(‹ ›。速さが 1時間なら 1時間、それ以外は 1日) | `StepDial` | `src/ui/StepDial.svelte` |
+| 視点の切り替え(アイコン 3 つと今の視点の名前) | `ViewSwitch` | `src/ui/ViewSwitch.svelte` |
+| 向くのアイコンと一覧(木星・土星・月は近い時期だけ) | `LookMenu` | `src/ui/LookMenu.svelte` |
+| 再生・速さ(押すたびに切り替え)・送り | `PlayControls` | `src/ui/PlayControls.svelte` |
 | 時間軸(目盛り・名場面の刻み・つまみ・前後の名場面) | `Timeline` | `src/ui/Timeline.svelte` |
 | 操作の部品の層全体(配置・操作しない間に薄くする・?debug の計測値) | `UiLayer` | `src/ui/UiLayer.svelte` |
 | 写真の窓(開く条件 `photoWindowAvailable`・置き場所 `placePhotoWindow`) | `PhotoWindow` | `src/ui/PhotoWindow.svelte`・`src/ui/photoWindow.ts` |
-| 名場面に着いた時の短い文(条件 `sceneJumpedTo`) | `SceneCaption` | `src/ui/SceneCaption.svelte`・`src/ui/sceneCaption.ts` |
+| 名場面・出来事の文と速さの前後(条件は `state.arrival` と `captionQueue.ts`。`sceneJumpedTo` は写真の窓のテストだけが使う) | `SceneCaption` | `src/ui/SceneCaption.svelte` |
 | 開いた直後の題字と、今日で止まった時の案内の 1 行(止める操作もここ) | `IntroOverlay`(文言は `t().intro`。題字と副題は仮称なので `ja/intro.ts` だけ直す) | `src/ui/IntroOverlay.svelte` |
 | 自動再生の進み方(割合 → 時刻)・始めるかどうかの判定 | `introEt` / `introMode`(時刻を進めるのは `store.tick`。始める・止める・止めた状態で始めるは `startIntro` / `stopIntro` / `skipIntro`) | `src/lib/intro.ts`・`src/lib/store/index.ts` |
 | ふだんの再生で名場面の近くだけ遅くする(近づく時だけ減速、通過後 2 秒ほどで戻る) | `pacedRate` | `src/lib/store/pacing.ts` |
@@ -72,7 +80,10 @@
 | 天体の相対位置を作る(倍精度で `eph.position(天体,'voyager1') − camOffset`) | `relativePosition` | `src/stage/placement.ts` |
 | 球をカメラ中心に縮めて置く(距離 SHELL・半径 r/d×SHELL) | `shellPlacement` / `SHELL` | `src/stage/placement.ts` |
 | 向いた時の向き(視野は変えない。倍率は状態が持つ) | `lookDirection` | `src/stage/look.ts` |
-| ボイジャー本体の視点(モデルの読み込み・カメラの姿勢・機体を重ねて描く) | `CraftView`(`pose` / `drag` / `activate` / `render`) | `src/stage/craft.ts` |
+| ボイジャー本体の視点(モデルの読み込み・カメラの姿勢・機体を重ねて描く) | `CraftView`(`pose` / `drag` / `activate` / `render`)、計算は `craftMath.ts` | `src/stage/craft.ts` |
+| 拡大に合わせた太陽の光・天の川の淡さ・暗い星を読むか | `effectiveZoom` / `sunGlowSizes` / `milkywayZoomGain` / `shouldLoadDeepStars` | `src/stage/zoomView.ts` |
+| 線のすっと薄れる動き・視点による線の濃さ | `stepToward` / `viewLineFade` | `src/stage/fade.ts` |
+| 垂線を出すか(回している間と土星の前後) | `dropWanted` | `src/stage/guide.ts` |
 | 星空のタップ(クリック)を受ける | `attachInput` の `tap`(「星空だけを表示」から戻す) | `src/stage/input.ts` |
 | カメラの姿勢(視界・引きの眺め・切り替えの補間) | `CameraRig` / `overviewPose` / `blendPose` / `overviewDistance` | `src/stage/camera.ts` |
 | 軌道の楕円を位置と速度から求める | `orbitFromState` / `orbitLoop` | `src/stage/orbit.ts` |

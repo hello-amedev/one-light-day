@@ -20,7 +20,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** ページの中で走らせる計測。結果を JSON で返す */
 const PAGE_SCRIPT = `(async () => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const button = (label) => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === label);
+  // 第6段階で部品がアイコンになったので、読み上げの名前(aria-label)でも探す
+  const button = (label) =>
+    [...document.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === label || b.textContent.trim() === label);
   const statsText = () => {
     const el = [...document.querySelectorAll('*')].find((e) => e.children.length === 0 && /^fps /.test(e.textContent.trim()));
     return el ? el.textContent.trim() : '';
@@ -104,6 +106,8 @@ const PAGE_SCRIPT = `(async () => {
 const SCENARIOS = [
   { name: 'PC 1280x800 2026年11月(259億km)', query: '?debug&t=2026-11-01T00:00:00Z&view=voyager&look=sun', width: 1280, height: 800, dpr: 2, mobile: false, cpu: 1 },
   { name: 'PC 1280x800 木星の最接近', query: '?debug&t=1979-03-05T12:04:00Z&view=voyager&look=jupiter', width: 1280, height: 800, dpr: 2, mobile: false, cpu: 1 },
+  { name: 'PC 1280x800 拡大の上限で地球を向く(×143)', query: '?debug&t=2026-11-01T00:00:00Z&view=voyager&look=earth&mag=143', width: 1280, height: 800, dpr: 2, mobile: false, cpu: 1 },
+  { name: 'PC 1280x800 ボイジャー本体(機体の読み込み後)', query: '?debug&t=2026-11-01T00:00:00Z&view=craft', width: 1280, height: 800, dpr: 2, mobile: false, cpu: 1 },
   { name: 'スマホ 390x844 2026年11月(CPU 4倍遅く)', query: '?debug&t=2026-11-01T00:00:00Z&view=voyager&look=sun', width: 390, height: 844, dpr: 3, mobile: true, cpu: 4 },
   { name: 'スマホ 390x844 木星の最接近(CPU 4倍遅く)', query: '?debug&t=1979-03-05T12:04:00Z&view=voyager&look=jupiter', width: 390, height: 844, dpr: 3, mobile: true, cpu: 4 },
 ];
