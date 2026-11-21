@@ -16,12 +16,20 @@ const ORBIT_REFRESH_S = 30 * 86400;
 const ORBIT_OPACITY = 0.42;
 /** 操作しない間の軌道の線の濃さ(通常に対する割合) */
 const ORBIT_DIM = 0.25;
+/** 早回しで 1 周以上進む惑星の軌道の線に足す明るさ(「うっすら明るく」) */
+const ORBIT_GLOW = 0.24;
 const TRACK_PAST_OPACITY = 0.9;
+/** 軌跡の線の明るさ: いまの位置が 1、打ち上げに近い端はこの割合まで控えめにする(木星・土星の曲がりは残る明るさ) */
+const TRACK_OLD_BRIGHTNESS = 0.45;
+/** 古い側から新しい側へ明るくなる曲線の指数(1 より小さいと、早い段階から明るくなる) */
+const TRACK_FADE_CURVE = 0.6;
 const TRACK_FUTURE_OPACITY = 0.28;
 
-function makeLine(points: number, color: string, opacity: number, order: number): THREE.Line {
+function makeLine(points: number, color: string, opacity: number, order: number, withColors = false): THREE.Line {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(points * 3), 3));
+  // 頂点ごとの明るさ(色に掛ける)。暗い地の上なので、暗くすれば薄く見える
+  if (withColors) geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(points * 3), 3));
   geometry.setDrawRange(0, 0);
   const material = new THREE.LineBasicMaterial({
     color,
@@ -29,6 +37,7 @@ function makeLine(points: number, color: string, opacity: number, order: number)
     opacity,
     depthTest: false,
     depthWrite: false,
+    vertexColors: withColors,
   });
   const line = new THREE.Line(geometry, material);
   line.frustumCulled = false;
@@ -63,8 +72,8 @@ export class OrbitLines {
     }
   }
 
-  /** chrome: 0(薄い)〜 1(通常) */
-  update(ctx: FrameContext, cameraSun: Vec3, chrome: number): void {
+  /** chrome: 0(薄い)〜 1(通常)。glow: 惑星ごとの明るさの足し分 0〜1(PLANET_IDS の順。早回しで 1 周以上進む惑星) */
+  update(ctx: FrameContext, cameraSun: Vec3, chrome: number, glow?: readonly number[]): void {
     if (Math.abs(ctx.et - this.loopEt) > ORBIT_REFRESH_S) {
       this.loopEt = ctx.et;
       PLANET_IDS.forEach((id, i) => {
@@ -84,7 +93,7 @@ export class OrbitLines {
       }
       line.geometry.attributes.position.needsUpdate = true;
       line.geometry.setDrawRange(0, src.length / 3);
-      (line.material as THREE.LineBasicMaterial).opacity = opacity;
+      (line.material as THREE.LineBasicMaterial).opacity = Math.min(1, opacity + (glow?.[i] ?? 0) * ORBIT_GLOW);
     });
   }
 
@@ -106,7 +115,7 @@ export class TrackLines {
     this.track = eph.track('voyager1');
     this.count = this.track.length / 4;
     // 先頭からの線と、いまの位置からの線で、それぞれ「全点 + 現在位置」の分だけ持つ
-    this.past = makeLine(this.count + 1, theme.gold, TRACK_PAST_OPACITY, 2);
+    this.past = makeLine(this.count + 1, theme.gold, TRACK_PAST_OPACITY, 2, true);
     this.future = makeLine(this.count + 1, theme.gold, TRACK_FUTURE_OPACITY, 2);
     this.group.add(this.past, this.future);
   }
@@ -139,16 +148,25 @@ export class TrackLines {
     const here: Vec3 = [-ctx.offset[0], -ctx.offset[1], -ctx.offset[2]];
 
     const pastArr = (this.past.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;
+    const colArr = (this.past.geometry.getAttribute('color') as THREE.BufferAttribute).array as Float32Array;
+    // 軌跡の線は、いまの位置に近いほど明るく、打ち上げに近い側は控えめにする(時刻の割合で決める)
+    const span = Math.max(ctx.et - t[0], 1);
     let n = 0;
     for (let i = 0; i <= k; i++) {
-      pastArr[n++] = t[i * 4 + 1] - cameraSun[0];
-      pastArr[n++] = t[i * 4 + 2] - cameraSun[1];
-      pastArr[n++] = t[i * 4 + 3] - cameraSun[2];
+      pastArr[n] = t[i * 4 + 1] - cameraSun[0];
+      pastArr[n + 1] = t[i * 4 + 2] - cameraSun[1];
+      pastArr[n + 2] = t[i * 4 + 3] - cameraSun[2];
+      const f = Math.min(1, Math.max(0, (t[i * 4] - t[0]) / span));
+      colArr[n] = colArr[n + 1] = colArr[n + 2] = TRACK_OLD_BRIGHTNESS + (1 - TRACK_OLD_BRIGHTNESS) * Math.pow(f, TRACK_FADE_CURVE);
+      n += 3;
     }
-    pastArr[n++] = here[0];
-    pastArr[n++] = here[1];
-    pastArr[n++] = here[2];
+    pastArr[n] = here[0];
+    pastArr[n + 1] = here[1];
+    pastArr[n + 2] = here[2];
+    colArr[n] = colArr[n + 1] = colArr[n + 2] = 1;
+    n += 3;
     this.past.geometry.attributes.position.needsUpdate = true;
+    this.past.geometry.attributes.color.needsUpdate = true;
     this.past.geometry.setDrawRange(0, n / 3);
 
     const futArr = (this.future.geometry.getAttribute('position') as THREE.BufferAttribute).array as Float32Array;

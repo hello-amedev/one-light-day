@@ -77,6 +77,18 @@ export function formatDistance(km: number): string {
   return hud.distanceKm(formatInteger(abs));
 }
 
+/**
+ * 切りのよい距離 km → 「10億km」「2000万km」「500km」。縮尺の物差し用で、小数は出さない。
+ * 1・2・5 × 10 の何乗 km を渡す前提(億・万の単位に丸めた時に端数が出ない値)
+ */
+export function formatDistanceRound(km: number): string {
+  const hud = t().hud;
+  const abs = Math.abs(km);
+  if (abs >= 1e8) return hud.distanceOku(formatInteger(abs / 1e8));
+  if (abs >= 1e4) return hud.distanceMan(formatInteger(abs / 1e4));
+  return hud.distanceKm(formatInteger(abs));
+}
+
 /** 秒数 → 「5時間36分」。withSeconds なら「24時間0分0秒」。1 時間未満は「36分12秒」、1 分未満は「8.3秒」 */
 export function formatLightDuration(seconds: number, withSeconds = false): string {
   const hud = t().hud;
