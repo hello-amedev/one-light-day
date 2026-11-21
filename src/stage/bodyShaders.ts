@@ -38,6 +38,9 @@ export const surfaceFragment = /* glsl */ `
   uniform vec2 uTerm;
   uniform float uLimb;
   uniform vec3 uNight;
+  // 月明かり(地球だけ)。月への向きと、満ち欠けを含めた強さ。0 なら照らさない
+  uniform vec3 uMoonDir;
+  uniform float uMoonLight;
   uniform float uEmissive;
   #ifdef RING_SHADOW
   uniform sampler2D uProfile;
@@ -81,7 +84,9 @@ export const surfaceFragment = /* glsl */ `
     }
     #endif
 
-    vec3 lin = pow(base, vec3(2.2)) * light + uNight;
+    // 夜の側だけを、月の向きから照らす(昼の側は太陽の光に埋もれるので足さない)
+    float moon = max(dot(n, uMoonDir), 0.0) * uMoonLight * (1.0 - lit);
+    vec3 lin = pow(base, vec3(2.2)) * (light + moon) + uNight;
     lin = mix(lin, pow(base, vec3(2.2)), uEmissive);
     gl_FragColor = vec4(pow(lin, vec3(1.0 / 2.2)), 1.0);
   }

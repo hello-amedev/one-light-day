@@ -13,6 +13,8 @@ export interface Theme {
   orbitOpacity: number;
   /** 天の川の明るさの倍率 */
   milkywayGain: number;
+  /** 地球の夜の側を照らす月明かりの強さ(満月の時。昼の光を 1 とした線形の値。実際は約 0.000003 で、見えるように強めてある) */
+  earthMoonlight: number;
 }
 
 /** 読めなかった時(テストなど)の値。app.css の第 1 段階の値と同じ */
@@ -26,6 +28,7 @@ const FALLBACK: Theme = {
   sunGlare: 1.3,
   orbitOpacity: 1,
   milkywayGain: 1,
+  earthMoonlight: 0.15,
 };
 
 export function readTheme(): Theme {
@@ -46,5 +49,6 @@ export function readTheme(): Theme {
     sunGlare: num('--sun-glare', FALLBACK.sunGlare),
     orbitOpacity: num('--orbit-opacity', FALLBACK.orbitOpacity),
     milkywayGain: num('--milkyway-gain', FALLBACK.milkywayGain),
+    earthMoonlight: num('--earth-moonlight', FALLBACK.earthMoonlight),
   };
 }

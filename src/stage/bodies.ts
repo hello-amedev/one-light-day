@@ -26,6 +26,7 @@ import { SurfaceTextures } from './surfaceTextures';
 import type { Theme } from './theme';
 import { sunGlowSizes } from './zoomView';
 import { makeCoreTexture, makeDotTexture, makeGlowTexture, makeSpikeTexture } from './textures';
+import { moonlight } from './moonlight';
 
 /** この半径(px)より小さい球は、光の点で描く */
 export const DOT_BELOW_PX = 1.5;
@@ -84,7 +85,8 @@ interface Shading {
 }
 const FLAT_SHADING: Shading = { term: [-0.05, 0.6], limb: 0, night: [0.0007, 0.001, 0.0018] };
 const SHADING: Partial<Record<DrawnId, Shading>> = {
-  earth: { term: [-0.1, 0.9], limb: 0, night: [0.0016, 0.0024, 0.0042] },
+  // 地球の夜の側は月明かりで照らす(uMoonLight)。月の届かない所はごく暗い青だけを残す
+  earth: { term: [-0.1, 0.9], limb: 0, night: [0.0003, 0.0005, 0.0009] },
   moon: { term: [-0.06, 0.4], limb: 0, night: [0.0007, 0.001, 0.0018] },
   jupiter: { term: [-0.16, 0.8], limb: 0.5, night: [0.0007, 0.001, 0.0018] },
   saturn: { term: [-0.14, 0.8], limb: 0.42, night: [0.0007, 0.001, 0.0018] },
@@ -165,6 +167,8 @@ interface SurfaceUniforms {
   uTerm: U<THREE.Vector2>;
   uLimb: U<number>;
   uNight: U<THREE.Vector3>;
+  uMoonDir: U<THREE.Vector3>;
+  uMoonLight: U<number>;
   uEmissive: U<number>;
   uProfile: U<THREE.Texture>;
   uLightBody: U<THREE.Vector3>;
@@ -263,6 +267,11 @@ export class Bodies {
   private tmp: Vec3 = [0, 0, 0];
   private light: Vec3 = [1, 0, 0];
   private lightBody: Vec3 = [1, 0, 0];
+  private moonDir: Vec3 = [1, 0, 0];
+  private earthToMoon: Vec3 = [0, 0, 0];
+  private earthToSun: Vec3 = [0, 0, 0];
+  /** 満月の時の月明かりの強さ(app.css の --earth-moonlight) */
+  private moonlightGain: number;
   private rot: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
   private order: { item: BodyItem; d: number }[] = [];
   private sunPos = new THREE.Vector3();
@@ -275,6 +284,7 @@ export class Bodies {
     options: { maxTextureSize: number; maxAnisotropy: number; onTextureLoaded: () => void },
   ) {
     this.glare = theme.sunGlare;
+    this.moonlightGain = theme.earthMoonlight;
     this.eph = eph;
     this.surfaces = new SurfaceTextures({
       maxTextureSize: options.maxTextureSize,
@@ -338,6 +348,8 @@ export class Bodies {
       uTerm: { value: new THREE.Vector2(shading.term[0], shading.term[1]) },
       uLimb: { value: shading.limb },
       uNight: { value: new THREE.Vector3(...shading.night) },
+      uMoonDir: { value: new THREE.Vector3(1, 0, 0) },
+      uMoonLight: { value: 0 },
       uEmissive: { value: id === 'sun' ? 1 : 0 },
       uProfile: { value: this.blank },
       uLightBody: { value: new THREE.Vector3(1, 0, 0) },
@@ -579,6 +591,19 @@ export class Bodies {
       sub(this.sunRel, this.rel, this.tmp);
       normalize(this.tmp, this.light);
       u.uLight.value.set(this.light[0], this.light[1], this.light[2]);
+    }
+
+    // 地球の夜の側を照らす月明かり。月の位置データがある間だけ(打ち上げの直後。地球が大きく見えるのはこの間)
+    if (id === 'earth') {
+      const range = this.eph.coverage('moon');
+      let strength = 0;
+      if (ctx.et >= range.t0 && ctx.et <= range.t1) {
+        this.eph.position('moon', 'earth', ctx.et, this.earthToMoon);
+        this.eph.position('sun', 'earth', ctx.et, this.earthToSun);
+        strength = moonlight(this.earthToMoon, this.earthToSun, this.moonDir) * this.moonlightGain;
+      }
+      u.uMoonDir.value.set(this.moonDir[0], this.moonDir[1], this.moonDir[2]);
+      u.uMoonLight.value = strength;
     }
 
     // 自転の向き(天体固定の座標 → 黄道)
