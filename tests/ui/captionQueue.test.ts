@@ -134,7 +134,9 @@ describe('出来事の文', () => {
     const all = Object.values(t().events.lines).join('\n') + Object.values(t().events.names).join('\n');
     expect(all).not.toMatch(/1\s*枚/); // 地球と月は「1 枚に収めた」と書かない
     expect(all).not.toContain('03:22');
-    expect(t().events.lines.titanFlyby).toContain('UTC');
+    // タイタンの日付は米国の時刻では 11 日になる。日付を書くなら UTC を添える
+    const titan = t().events.lines.titanFlyby;
+    if (/\d+\s*日/.test(titan.replace(/\d+時間/g, ''))) expect(titan).toContain('UTC');
     expect(t().events.lines.titanFlyby).not.toMatch(/6,?490/);
     expect(t().events.lines.ioVolcano).toMatch(/撮影.*発見/);
   });
