@@ -4,11 +4,17 @@
  * 見た目は、第 2 段階の比較であめさんが選んだ「計器盤」の案(数字だけ端末の案の字体)。2026-11-21
  */
 
-/* フォントは SIL Open Font License のものをパッケージから同梱する(外部へ読みに行かない)。
-   日本語は文字の範囲ごとに細かく分かれていて、画面で使った範囲だけが読み込まれる */
+/* フォントは SIL Open Font License のものを同梱する(外部へ読みに行かない)。
+   日本語は、サイトで使う文字だけを 1 ファイルに絞ったもの(npm run fonts が作る。scripts/build-fonts.mjs) */
 @import '@fontsource/michroma/400.css';
 @import '@fontsource/share-tech-mono/400.css';
-@import '@fontsource/zen-kaku-gothic-new/400.css';
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/zen-kaku-gothic-new-subset.woff2') format('woff2');
+}
 
 :root {
   /* 色 */
