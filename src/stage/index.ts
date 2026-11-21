@@ -9,7 +9,7 @@ import type { AppState, AppStore } from '../lib/store';
 import { Bodies } from './bodies';
 import { CraftView } from './craft';
 import { fovFromMagnification } from '../lib/zoom';
-import { basisFromForward, CameraRig, verticalFovDeg } from './camera';
+import { basisFromForward, CameraRig, LOOK_RELEASE_SECONDS, verticalFovDeg } from './camera';
 import { DROP_FADE_S, LINE_FADE_S, stepToward, viewLineFade } from './fade';
 import type { FrameContext } from './frame';
 import { attachInput } from './input';
@@ -25,7 +25,7 @@ import { createStarfield } from './starfield';
 import { JUMP_SECONDS } from './streak';
 import { PlanetStreaks } from './streaks';
 import { readTheme } from './theme';
-import { catalogHasDeepStars, deepStarsWanted, effectiveZoom, shouldLoadDeepStars, type DeepStarsLoad } from './zoomView';
+import { catalogHasDeepStars, DEEP_STARS_DELAY_MS, effectiveZoom } from './zoomView';
 
 export interface StageOptions {
   canvas: HTMLCanvasElement;
@@ -79,10 +79,8 @@ export function createStage(options: StageOptions): Stage {
   // カメラは常に原点。near / far は線が切れない広さにとる(奥行きの判定は使わないので精度は問わない)
   const camera = new THREE.PerspectiveCamera(60, 1, 1, 1e13);
   const starfield = createStarfield(stars, theme.starGain);
-  // 暗い星(8 等まで)は、一定の倍率を超えたら 1 回だけ後から読み込んで足す。?stars=deep で最初から入っている時は足さない
+  // 暗い星(8 等まで)は、開いて最初の表示が落ち着いてから 1 回だけ読み込み、ふっと足す。?stars=deep で最初から入っている時は足さない
   const deepAtStart = catalogHasDeepStars(stars.data, STAR_STRIDE);
-  let deepLoad: DeepStarsLoad = deepAtStart ? 'ready' : 'none';
-  let deepOn = false;
   const orbits = new OrbitLines(eph, theme);
   const track = new TrackLines(eph, theme);
   const bodies = new Bodies(eph, theme, {
@@ -151,6 +149,20 @@ export function createStage(options: StageOptions): Stage {
   let lastOverviewDragMs: number | null = null;
   let dropFade = 0;
   let dropTimer: ReturnType<typeof setTimeout> | null = null;
+  // 暗い星を後から読む(最初に読み込む量に入れない)。読めなくても星空は動き続け、くり返し読みに行かない
+  const deepTimer = deepAtStart
+    ? null
+    : setTimeout(() => {
+        void loadStars(import.meta.env.BASE_URL + 'data/stars/stars-deep.bin').then(
+          (more) => {
+            if (disposed) return;
+            starfield.addDeep(more);
+            starfield.setDeepVisible(true);
+            invalidate();
+          },
+          (error: unknown) => console.warn('deep stars failed to load', error),
+        );
+      }, DEEP_STARS_DELAY_MS);
 
   function invalidate(): void {
     if (disposed || scheduled) return;
@@ -161,16 +173,23 @@ export function createStage(options: StageOptions): Stage {
   // ── 状態の変化 ──
   let lastView = initial.view;
   let lastLookSeq = initial.lookSeq;
+  let lastReleaseSeq = initial.lookReleaseSeq;
   const unsubscribe = store.subscribe((s: Readonly<AppState>) => {
     const now = performance.now();
     if (s.view !== lastView) {
+      const fromView = lastView;
       lastView = s.view;
       if (s.view === 'craft') craft.activate();
-      rig.switchView(!reducedMotion());
+      rig.switchView(fromView, s.view, !reducedMotion());
     }
     if (s.lookSeq !== lastLookSeq) {
       lastLookSeq = s.lookSeq;
       if (s.lookTarget) rig.look(s.lookTarget, s.et, now, s.view === 'voyager' && !reducedMotion());
+    }
+    // 名場面の範囲を出て追うのをやめた: 開いた直後と同じく太陽へ、ゆっくり向き直る
+    if (s.lookReleaseSeq !== lastReleaseSeq) {
+      lastReleaseSeq = s.lookReleaseSeq;
+      rig.look('sun', s.et, now, s.view === 'voyager' && !reducedMotion(), LOOK_RELEASE_SECONDS);
     }
     invalidate();
   });
@@ -186,6 +205,7 @@ export function createStage(options: StageOptions): Stage {
         // 回している間とその後の数秒は垂線を出す。数秒後に消える時の描き直しは、止まっている間も 1 回だけ予約する
         lastOverviewDragMs = performance.now();
         if (dropTimer !== null) clearTimeout(dropTimer);
+      if (deepTimer !== null) clearTimeout(deepTimer);
         dropTimer = setTimeout(() => {
           dropTimer = null;
           invalidate();
@@ -326,31 +346,11 @@ export function createStage(options: StageOptions): Stage {
     scaleBar.update(state.view === 'overview' && !rig.transitioning && !state.starsOnly, (2 * tanV * midDepth) / height);
     const mwFading = milkyway.update(now, zoom);
 
-    // 暗い星: ボイジャーの視界で ×3 を超えたら 1 回だけ読み込んで足し、ふっと現す(戻すと消える)
-    const userZoom = state.view === 'voyager' ? state.magnification : 1;
-    if (shouldLoadDeepStars(userZoom, deepLoad, deepAtStart)) {
-      deepLoad = 'loading';
-      void loadStars(import.meta.env.BASE_URL + 'data/stars/stars-deep.bin').then(
-        (more) => {
-          if (disposed) return;
-          starfield.addDeep(more);
-          deepLoad = 'ready';
-          invalidate();
-        },
-        (error) => {
-          // 読めなくても星空は動き続ける。くり返し読みに行かない
-          deepLoad = 'failed';
-          console.warn('deep stars failed to load', error);
-        },
-      );
-    }
-    deepOn = deepStarsWanted(userZoom, deepOn);
-    starfield.setDeepVisible(deepOn);
     const starsFading = starfield.update(dt);
     notifyWatchers(infos);
 
     renderer.render(scene, camera);
-    craft.render(renderer, camera, frameCtx, state.view === 'craft');
+    craft.render(renderer, camera, frameCtx, state.view === 'craft' || rig.retreatingFromCraft);
     if (!milkywayStarted) {
       milkywayStarted = true;
       milkyway.load();

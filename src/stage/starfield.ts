@@ -1,5 +1,5 @@
 // 星。約 8,900 個を 1 回の描画(THREE.Points)で出す。位置は単位ベクトル × 大きな半径で、カメラに付いて回る背景。
-// 暗い星(8 等まで。約 3 万個)は、拡大した時に後から足す別の層で、ふっと現れる(addDeep)。
+// 暗い星(8 等まで。約 3 万個)は、開いた後に読み込んで足す別の層で、ふっと現れる(addDeep)。
 // 大きさは等級から決め、明るい星だけ少しにじむ。星は鋭い点で、ほとんどは 1.5px ほどの小さな点。
 import * as THREE from 'three';
 import { bvToRgb, STAR_STRIDE, type StarCatalog } from '../lib/stars';

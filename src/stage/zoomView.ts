@@ -86,29 +86,10 @@ export function milkywayZoomGain(zoom: number): number {
 // ── 暗い星 ──
 
 /**
- * この倍率を超えたら暗い星(8 等まで)を足す。×3 は視野が約 20 度になる所で、
- * そこから先は 6.5 等より暗い星が見え始める(肉眼の限界を超えて、望遠鏡で星が増える感覚)。
- * ×1 で足さないのは、最初の表示を軽くするのと、広い視野では暗い星が砂のように見えて星座の形を邪魔するため
+ * 暗い星(8 等まで)を読み込み始めるまでの待ち(ms)。最初の表示(位置データ・基本の星・フォント)を先に読ませる。
+ * 2026-11-21 にあめさんが「星の数は多いほうが良い」と決めたので、倍率によらず、読み込んだら常に見せる
  */
-export const DEEP_STARS_ON_ZOOM = 3;
-/** 暗い星の層は、拡大が ×2.4 を下回るまで保つ(境目で出入りをくり返さない) */
-export const DEEP_STARS_OFF_ZOOM = 2.4;
-
-/** 暗い星のカタログを読み込み済みか・読み込み中か・手元にあるかの状態 */
-export type DeepStarsLoad = 'none' | 'loading' | 'ready' | 'failed';
-
-/**
- * 暗い星を、いま読み込み始めるか。条件: まだ読み込んでいない・失敗していない・最初から入っていない(?stars=deep)・倍率が閾値以上。
- * 失敗した時はくり返し読みに行かない
- */
-export function shouldLoadDeepStars(zoom: number, load: DeepStarsLoad, alreadyInCatalog: boolean): boolean {
-  return !alreadyInCatalog && load === 'none' && zoom >= DEEP_STARS_ON_ZOOM;
-}
-
-/** 暗い星の層を見せたいか(ヒステリシスつき)。wasOn は前の判断 */
-export function deepStarsWanted(zoom: number, wasOn: boolean): boolean {
-  return wasOn ? zoom >= DEEP_STARS_OFF_ZOOM : zoom >= DEEP_STARS_ON_ZOOM;
-}
+export const DEEP_STARS_DELAY_MS = 1200;
 
 /** 6.5 等は、基本のカタログ(stars.bin)に入れた星の暗さの限度。これより暗い星があれば、暗い星を最初から足してある(?stars=deep) */
 export const DEEP_STAR_MAG = 6.5;

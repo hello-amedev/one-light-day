@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AU_KM } from '../../src/lib/ephemeris/types';
 import { etFromIso } from '../../src/lib/ephemeris/time';
-import { overviewDistance, overviewPose, blendPose } from '../../src/stage/camera';
+import { approachPose, overviewDistance, overviewPose, blendPose } from '../../src/stage/camera';
 import { BODY_RADIUS_KM, PLANET_IDS } from '../../src/lib/bodies';
 import { angleBetween, azElFromDir, dirFromAzEl, length, DEG, type Vec3 } from '../../src/stage/math';
 import { relativePosition, shellPlacement } from '../../src/stage/placement';
@@ -102,5 +102,44 @@ describe('方位・仰角と方向ベクトルの往復', () => {
   it('仰角 +90 度は +z(上)', () => {
     const d = dirFromAzEl(0.3, Math.PI / 2);
     expect(d[2]).toBeCloseTo(1, 12);
+  });
+});
+
+describe('引きの眺めから本体の視点へ寄る動き', () => {
+  const v = eph.position('voyager1', 'sun', TIMES.今日);
+  const from = overviewPose(v, 70 * DEG, 28 * DEG, 1);
+  // 本体の視点: 機体の 20m 後ろから、機体を向く
+  const back: Vec3 = [0.3, -0.9, 0.3];
+  const bl = length(back);
+  const dirBack: Vec3 = [back[0] / bl, back[1] / bl, back[2] / bl];
+  const to = { offset: [dirBack[0] * 0.02, dirBack[1] * 0.02, dirBack[2] * 0.02] as Vec3, forward: [-dirBack[0], -dirBack[1], -dirBack[2]] as Vec3, fov: 52 };
+
+  it('始めと終わりは、それぞれの視点の姿勢と一致する', () => {
+    const a = approachPose(from, to, 0);
+    expect(length([a.offset[0] - from.offset[0], a.offset[1] - from.offset[1], a.offset[2] - from.offset[2]])).toBeLessThan(1e-6);
+    expect(angleBetween(a.forward, from.forward)).toBeLessThan(1e-9);
+    const b = approachPose(from, to, 1);
+    expect(length([b.offset[0] - to.offset[0], b.offset[1] - to.offset[1], b.offset[2] - to.offset[2]])).toBeLessThan(1e-9);
+    expect(angleBetween(b.forward, to.forward)).toBeLessThan(1e-9);
+    expect(b.fov).toBeCloseTo(52, 9);
+  });
+
+  it('向き直った後は、ボイジャーを画面の中央に置いたまま、遠ざからずに寄っていく', () => {
+    let prev = Infinity;
+    for (let i = 25; i <= 100; i++) {
+      const p = approachPose(from, to, i / 100);
+      const toVoyager: Vec3 = [-p.offset[0], -p.offset[1], -p.offset[2]];
+      expect(angleBetween(toVoyager, p.forward)).toBeLessThan(1e-6);
+      const l = length(p.offset);
+      expect(l).toBeLessThanOrEqual(prev * (1 + 1e-12));
+      prev = l;
+    }
+  });
+
+  it('向き直る間は、カメラの位置を動かさない', () => {
+    for (const s of [0.05, 0.12, 0.2]) {
+      const p = approachPose(from, to, s);
+      expect(length([p.offset[0] - from.offset[0], p.offset[1] - from.offset[1], p.offset[2] - from.offset[2]])).toBeLessThan(1e-6);
+    }
   });
 });

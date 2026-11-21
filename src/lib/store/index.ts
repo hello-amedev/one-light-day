@@ -16,6 +16,8 @@ const MAX_TICK_SECONDS = 0.1;
 /** 「次」「前」の名場面に数えるための最小の差(秒)。いまいる場面を次の場面と取り違えないため */
 const SCENE_MIN_GAP = 1;
 
+/** 名場面に属さない出来事から移った時に、向きを保つ前後の秒数 */
+const DEFAULT_HOLD_SECONDS = 10 * 86400;
 const SCENES_BY_TIME: readonly Scene[] = [...SCENES].sort((a, b) => a.et - b.et);
 
 export function createStore(options: StoreOptions): AppStore {
@@ -31,6 +33,8 @@ export function createStore(options: StoreOptions): AppStore {
     view: 'voyager',
     lookTarget: null,
     lookSeq: 0,
+    lookHold: null,
+    lookReleaseSeq: 0,
     intro: 'off',
     magnification: MAG_MIN,
     craftDistance: CRAFT_DISTANCE_DEFAULT_M,
@@ -70,8 +74,23 @@ export function createStore(options: StoreOptions): AppStore {
     return state.intro === 'off' ? {} : { intro: 'off' };
   }
 
-  function lookPatch(target: LookTarget): Partial<AppState> {
-    return { lookTarget: target, lookSeq: state.lookSeq + 1 };
+  /** hold は向きを保つ範囲。名場面・出来事から移った時だけ渡す(利用者の「向く」は null で、ずっと追う) */
+  function lookPatch(target: LookTarget, hold: AppState['lookHold'] = null): Partial<AppState> {
+    return { lookTarget: target, lookSeq: state.lookSeq + 1, lookHold: hold };
+  }
+
+  /** 名場面の、早回しが減速する範囲。名場面から移った時は、この間だけ相手を追う */
+  function sceneHold(id: SceneId | null, fallbackEt: number): AppState['lookHold'] {
+    const scene = id ? SCENES_BY_TIME.find((s) => s.id === id) : undefined;
+    if (!scene) return { t0: fallbackEt - DEFAULT_HOLD_SECONDS, t1: fallbackEt + DEFAULT_HOLD_SECONDS };
+    return { t0: scene.et - scene.slowWindow, t1: scene.et + scene.slowWindow };
+  }
+
+  /** 時刻を et に動かす時に足す。向きを保つ範囲の外へ出たら、追うのをやめる(3D 側は太陽へ向き直る) */
+  function releaseLook(et: number): Partial<AppState> {
+    const hold = state.lookHold;
+    if (!hold || (et >= hold.t0 && et <= hold.t1)) return {};
+    return { lookTarget: null, lookHold: null, lookReleaseSeq: state.lookReleaseSeq + 1 };
   }
 
   function jumpScene(id: SceneId): void {
@@ -81,10 +100,15 @@ export function createStore(options: StoreOptions): AppStore {
       et: clampEt(scene.et),
       playing: false,
       ...endIntro(),
-      ...lookPatch(scene.look),
+      ...lookPatch(scene.look, sceneHold(scene.id, scene.et)),
       arrival: { kind: 'scene', id },
       arrivalSeq: state.arrivalSeq + 1,
     });
+  }
+
+  /** 再生を始める。右端(最後まで再生した後)で押されたら、打ち上げの日に戻って初めから再生する */
+  function play(): void {
+    commit({ playing: true, ...(state.et >= maxEt ? { et: minEt, ...releaseLook(minEt) } : {}), ...endIntro() });
   }
 
   function jumpEvent(id: EventId): void {
@@ -94,7 +118,7 @@ export function createStore(options: StoreOptions): AppStore {
       et: clampEt(event.et),
       playing: false,
       ...endIntro(),
-      ...(event.look ? lookPatch(event.look) : {}),
+      ...(event.look ? lookPatch(event.look, sceneHold(event.scene, event.et)) : {}),
       arrival: { kind: 'event', id },
       arrivalSeq: state.arrivalSeq + 1,
     });
@@ -114,23 +138,21 @@ export function createStore(options: StoreOptions): AppStore {
     },
 
     setTime(et) {
-      commit({ et: clampEt(et), ...endIntro() });
+      const next = clampEt(et);
+      commit({ et: next, ...releaseLook(next), ...endIntro() });
     },
     stepTime(deltaSeconds) {
-      commit({ et: clampEt(state.et + deltaSeconds), ...endIntro() });
+      const next = clampEt(state.et + deltaSeconds);
+      commit({ et: next, ...releaseLook(next), ...endIntro() });
     },
 
-    play() {
-      // 右端では進めないので、押しても点滅だけして止まる状態を作らない
-      if (state.et >= maxEt) return;
-      commit({ playing: true, ...endIntro() });
-    },
+    play,
     pause() {
       commit({ playing: false, ...endIntro() });
     },
     toggle() {
       if (state.playing) commit({ playing: false, ...endIntro() });
-      else if (state.et < maxEt) commit({ playing: true, ...endIntro() });
+      else play();
     },
     setRate(rate: RateId) {
       commit({ rate });
@@ -196,8 +218,8 @@ export function createStore(options: StoreOptions): AppStore {
         return commit({ et: introEt(progress, minEt, maxEt), intro: 'run' });
       }
       const next = state.et + effectiveRate(state.et, state.rate) * dt;
-      if (next >= maxEt) return commit({ et: maxEt, playing: false });
-      return commit({ et: next });
+      if (next >= maxEt) return commit({ et: maxEt, playing: false, ...releaseLook(maxEt) });
+      return commit({ et: next, ...releaseLook(next) });
     },
   };
 }

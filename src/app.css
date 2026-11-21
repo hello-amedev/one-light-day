@@ -58,6 +58,8 @@
   --text-m: 0.875rem;
   --text-l: 1.125rem;
   --text-xl: 1.5rem;
+  /* 右上の日付と右下の距離の大きい数字(PC)。スマホの縦画面は --text-xl */
+  --text-readout: 2rem;
 
   /* 線の太さ */
   --line-thin: 1px;

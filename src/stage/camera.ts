@@ -26,8 +26,16 @@ import {
 
 /** 向きを動かす時間(秒) */
 export const LOOK_SECONDS = 0.8;
+/** 名場面の範囲を出て、追うのをやめて太陽へ向き直る時の長さ(再生中なので、ゆっくり) */
+export const LOOK_RELEASE_SECONDS = 1.5;
 /** 視点を切り替える時間(秒) */
 export const VIEW_SECONDS = 1.6;
+/** 引きの眺めと本体の視点の間の切り替え(向き直る・寄る・回り込む)の時間(秒) */
+export const CRAFT_VIEW_SECONDS = 2.8;
+/** 本体の視点へ寄る動きのうち、最初にボイジャーへ向き直る割合 */
+const APPROACH_TURN = 0.25;
+/** 寄る動きのうち、機体のまわりを回り込み始める所(寄る部分の中の割合) */
+const APPROACH_ORBIT_FROM = 0.7;
 
 export const OVERVIEW_FOV = 45;
 /** 引きの眺めの既定の向き */
@@ -97,6 +105,28 @@ export function blendPose(from: CameraPose, to: CameraPose, s: number): CameraPo
   return { offset, forward: slerp(from.forward, to.forward, s), fov: lerp(from.fov, to.fov, s) };
 }
 
+/**
+ * 引きの眺め(from)から本体の視点(to)へ寄る姿勢。s は 0〜1(線形。中で緩急をつける)。
+ * 1) その場でボイジャーの方へ向き直る、2) ボイジャーを画面の中央に置いたまま、まっすぐ寄る、
+ * 3) 寄り切る前に、機体のまわりを回り込んで本体の視点の構図へ。2) と 3) の間、向きは常にボイジャーを向く
+ * (途中で振れないので、どこへ寄っているかを見失わない)。逆向き(本体の視点から引く)は approachPose(to, from, 1 - s)
+ */
+export function approachPose(from: CameraPose, to: CameraPose, s: number): CameraPose {
+  const l0 = length(from.offset);
+  const l1 = length(to.offset);
+  if (!(l0 > 0) || !(l1 > 0)) return blendPose(from, to, easeInOut(s));
+  const d0 = scale(from.offset, 1 / l0);
+  const d1 = scale(to.offset, 1 / l1);
+  const aim: Vec3 = scale(d0, -1);
+  if (s < APPROACH_TURN) {
+    return { offset: [...from.offset], forward: slerp(from.forward, aim, easeInOut(s / APPROACH_TURN)), fov: from.fov };
+  }
+  const u = (s - APPROACH_TURN) / (1 - APPROACH_TURN);
+  const len = Math.exp(lerp(Math.log(l0), Math.log(l1), easeInOut(u)));
+  const dir = slerp(d0, d1, smoothstep(APPROACH_ORBIT_FROM, 1, u));
+  return { offset: scale(dir, len), forward: scale(dir, -1), fov: lerp(from.fov, to.fov, smoothstep(0, 1, u)) };
+}
+
 /** 画面の向き(右・上・前)。上は常に +z */
 export interface Basis {
   right: Vec3;
@@ -124,13 +154,13 @@ export class CameraRig {
   private dir: Vec3 = [1, 0, 0];
   /** 追っている相手。利用者がドラッグするまで追い続ける */
   private follow: LookTarget | null = 'sun';
-  private lookAnim: { startDir: Vec3; startMs: number } | null = null;
+  private lookAnim: { startDir: Vec3; startMs: number; seconds: number } | null = null;
 
   private ovAz = OVERVIEW_AZ;
   private ovEl = OVERVIEW_EL;
   private ovZoom = 1;
 
-  private trans: { from: CameraPose; startMs: number; seconds: number } | null = null;
+  private trans: { from: CameraPose; startMs: number; seconds: number; kind: 'blend' | 'approach' | 'retreat' } | null = null;
   private lastPose: CameraPose | null = null;
 
   constructor(eph: Ephemeris) {
@@ -147,6 +177,11 @@ export class CameraRig {
     return this.trans !== null;
   }
 
+  /** 本体の視点から引きの眺めへ引いている途中か(機体は、引いて小さくなるまで描き続ける) */
+  get retreatingFromCraft(): boolean {
+    return this.trans?.kind === 'retreat';
+  }
+
   get followTarget(): LookTarget | null {
     return this.follow;
   }
@@ -160,20 +195,25 @@ export class CameraRig {
   }
 
   /** 「向く」が押された。animate なら約 0.8 秒で向きを動かす。視野(倍率)は変えない(第6段階で自動の望遠をやめた) */
-  look(target: LookTarget, et: number, nowMs: number, animate: boolean): void {
+  look(target: LookTarget, et: number, nowMs: number, animate: boolean, seconds: number = LOOK_SECONDS): void {
     this.follow = target;
     if (animate) {
-      this.lookAnim = { startDir: [...this.dir], startMs: nowMs };
+      this.lookAnim = { startDir: [...this.dir], startMs: nowMs, seconds };
     } else {
       this.lookAnim = null;
       lookDirection(target, this.eph, et, this.dir);
     }
   }
 
-  /** 視点を切り替える。いまの姿勢から約 1.6 秒で、移った先の姿勢へ */
-  switchView(animate: boolean): void {
+  /**
+   * 視点を切り替える。いまの姿勢から、移った先の姿勢へ。
+   * 引きの眺めと本体の視点の間は、ボイジャーを中央に置いたまま寄る・引く(約 2.8 秒)。ほかは約 1.6 秒で補間する
+   */
+  switchView(fromView: ViewId, toView: ViewId, animate: boolean): void {
     if (animate && this.lastPose) {
-      this.trans = { from: this.lastPose, startMs: -1, seconds: VIEW_SECONDS };
+      const kind =
+        fromView === 'overview' && toView === 'craft' ? 'approach' : fromView === 'craft' && toView === 'overview' ? 'retreat' : 'blend';
+      this.trans = { from: this.lastPose, startMs: -1, seconds: kind === 'blend' ? VIEW_SECONDS : CRAFT_VIEW_SECONDS, kind };
     } else {
       this.trans = null;
     }
@@ -224,6 +264,8 @@ export class CameraRig {
       if (this.trans.startMs < 0) this.trans.startMs = nowMs;
       const u = (nowMs - this.trans.startMs) / (this.trans.seconds * 1000);
       if (u >= 1) this.trans = null;
+      else if (this.trans.kind === 'approach') pose = approachPose(this.trans.from, target, u);
+      else if (this.trans.kind === 'retreat') pose = approachPose(target, this.trans.from, 1 - u);
       else pose = blendPose(this.trans.from, target, easeInOut(u));
     }
     this.lastPose = pose;
@@ -235,7 +277,7 @@ export class CameraRig {
     // 追う相手の向きは毎回引き直す(再生中に相手が画面から逃げない)。向ける途中は始点と今の向きの間を進む
     const goal = lookDirection(this.follow, this.eph, et);
     if (this.lookAnim) {
-      const u = (nowMs - this.lookAnim.startMs) / (LOOK_SECONDS * 1000);
+      const u = (nowMs - this.lookAnim.startMs) / (this.lookAnim.seconds * 1000);
       if (u >= 1) {
         this.lookAnim = null;
         this.dir = goal;

@@ -46,21 +46,32 @@
     }
   }
   .label {
+    margin-bottom: var(--space-1);
     font-family: var(--font-body);
     font-size: var(--text-xs);
     letter-spacing: 0.08em;
     color: var(--color-text-dim);
   }
   .value {
-    font-size: var(--text-xl);
+    font-size: var(--text-readout);
     line-height: 1.15;
     color: var(--color-text);
     white-space: nowrap;
+  }
+  @media (max-width: 640px) and (orientation: portrait) {
+    .value {
+      font-size: var(--text-xl);
+    }
+    .label,
+    .sub {
+      margin: 0;
+    }
   }
   .earth .value {
     color: var(--color-earth);
   }
   .sub {
+    margin-top: var(--space-1);
     font-size: var(--text-s);
     color: var(--color-text-dim);
     min-height: 1.3em;

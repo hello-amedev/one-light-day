@@ -2,14 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { FOV_BASE_DEG, MAG_MAX, fovFromMagnification } from '../../src/lib/zoom';
 import { STAR_STRIDE } from '../../src/lib/stars';
 import {
-  DEEP_STARS_OFF_ZOOM,
-  DEEP_STARS_ON_ZOOM,
   catalogHasDeepStars,
-  deepStarsWanted,
   effectiveZoom,
   glareZoomFactor,
   milkywayZoomGain,
-  shouldLoadDeepStars,
   sunGlowSizes,
 } from '../../src/stage/zoomView';
 
@@ -83,26 +79,7 @@ describe('天の川の淡さ', () => {
   });
 });
 
-describe('暗い星の読み込み', () => {
-  it('倍率が閾値(×3)に届いたら、まだ読んでいなければ読む', () => {
-    expect(shouldLoadDeepStars(DEEP_STARS_ON_ZOOM, 'none', false)).toBe(true);
-    expect(shouldLoadDeepStars(2.9, 'none', false)).toBe(false);
-    expect(shouldLoadDeepStars(1, 'none', false)).toBe(false);
-  });
-  it('読み込み中・読み込み済み・失敗した後は、もう読まない', () => {
-    for (const load of ['loading', 'ready', 'failed'] as const) {
-      expect(shouldLoadDeepStars(100, load, false)).toBe(false);
-    }
-  });
-  it('?stars=deep で最初から入っている時は読まない', () => {
-    expect(shouldLoadDeepStars(100, 'none', true)).toBe(false);
-  });
-  it('層を見せるかは、閾値で入り、少し下がるまで保つ(境目でちらつかない)', () => {
-    expect(deepStarsWanted(2.5, false)).toBe(false);
-    expect(deepStarsWanted(3, false)).toBe(true);
-    expect(deepStarsWanted(2.5, true)).toBe(true);
-    expect(deepStarsWanted(DEEP_STARS_OFF_ZOOM - 0.01, true)).toBe(false);
-  });
+describe('暗い星', () => {
   it('カタログの等級の列から、暗い星が入っているかを判断する', () => {
     const mk = (mags: number[]): Float32Array => {
       const d = new Float32Array(mags.length * STAR_STRIDE);

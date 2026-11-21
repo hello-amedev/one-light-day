@@ -329,6 +329,7 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    gap: var(--space-2);
     min-width: 0;
   }
   /* 時間軸の左に、再生・速さ・送り */
@@ -416,6 +417,7 @@
     }
     .readout-area {
       justify-self: stretch;
+      gap: 0;
     }
   }
 

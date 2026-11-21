@@ -56,10 +56,14 @@ export interface Pt {
 }
 
 /** 名前の置き場所。marker の中心からの位置(px)と、その位置が名前のどこにあたるか */
+/** 名前を目印のどちら側に置いたか */
+export type LabelSide = 'right' | 'left' | 'below' | 'above';
+
 export interface LabelPlacement {
   dx: number;
   dy: number;
   anchor: 'start' | 'end' | 'middle';
+  side: LabelSide;
 }
 
 /** 画面の中で、すでに何かが占めている四角(他の目印の輪・置いた名前) */
@@ -87,7 +91,18 @@ export interface LabelInput {
   /** 他の目印の輪・置いた名前。重なる側は避ける */
   occupied?: readonly Occupied[];
   owner?: number;
+  /** 前のコマで置いた側。境目の近くでは、この側を保つ(再生中に左右へちらつかない) */
+  prev?: LabelSide | null;
 }
+
+/**
+ * 左右を決める境目の幅(px)。近くの目印との横のずれ・画面の中心からのずれがこの幅に収まる間は、前の側を保つ。
+ * 再生中に目印どうしが横に並ぶ所や、画面の中心を横切る所で、左右が毎コマ入れ替わらないようにする
+ */
+const SIDE_DEADBAND_REF_PX = 24;
+const SIDE_DEADBAND_CENTER_PX = 80;
+/** 前の側は、画面の端や他の名前にこの px まで食い込んでも保つ。ほかの側へ移るには、この px の余裕が要る */
+const STICKY_PX = 4;
 
 const LABEL_H = 14;
 
@@ -98,14 +113,16 @@ function labelRect(at: Pt, c: LabelPlacement, w: number): Occupied {
   return { x0, x1: x0 + w, y0: y - LABEL_H / 2, y1: y + LABEL_H / 2, owner: -1 };
 }
 
-function fitsViewport(r: Occupied, vp: { width: number; height: number }): boolean {
-  return r.x0 >= EDGE_MARGIN_PX && r.x1 <= vp.width - EDGE_MARGIN_PX && r.y0 >= EDGE_MARGIN_PX && r.y1 <= vp.height - EDGE_MARGIN_PX;
+/** pad は四角を広げる量(負なら縮める)。前の側には甘く、ほかの側には厳しく判定するのに使う */
+function fitsViewport(r: Occupied, vp: { width: number; height: number }, pad = 0): boolean {
+  const m = EDGE_MARGIN_PX + pad;
+  return r.x0 >= m && r.x1 <= vp.width - m && r.y0 >= m && r.y1 <= vp.height - m;
 }
 
-function collides(r: Occupied, occupied: readonly Occupied[], owner: number): boolean {
+function collides(r: Occupied, occupied: readonly Occupied[], owner: number, pad = 0): boolean {
   for (const o of occupied) {
     if (o.owner === owner) continue;
-    if (r.x0 < o.x1 && r.x1 > o.x0 && r.y0 < o.y1 && r.y1 > o.y0) return true;
+    if (r.x0 - pad < o.x1 && r.x1 + pad > o.x0 && r.y0 - pad < o.y1 && r.y1 + pad > o.y0) return true;
   }
   return false;
 }
@@ -121,21 +138,28 @@ export function placeLabel(input: LabelInput): LabelPlacement | null {
   const { at, radiusPx, ringPx, labelW, viewport, ref } = input;
   const occupied = input.occupied ?? [];
   const owner = input.owner ?? -2;
-  const preferRight = ref ? ref.x <= at.x : at.x >= viewport.width / 2;
+  const prev = input.prev ?? null;
+  // 近くの目印が左にあれば右(画面の中心より右なら右)。境目の近くでは、前に置いた左右を保つ
+  const delta = ref ? at.x - ref.x : at.x - viewport.width / 2;
+  const deadband = ref ? SIDE_DEADBAND_REF_PX : SIDE_DEADBAND_CENTER_PX;
+  const preferRight = (prev === 'right' || prev === 'left') && Math.abs(delta) < deadband ? prev === 'right' : delta >= 0;
 
   const off = ringPx > 0 ? ringPx / 2 + LABEL_GAP_PX : radiusPx + DISC_GAP_PX;
-  const side = (dir: 1 | -1): LabelPlacement => ({ dx: dir * off, dy: 0, anchor: dir === 1 ? 'start' : 'end' });
-  const vgap = ringPx > 0 ? off + 6 : off + 6;
+  const side = (dir: 1 | -1): LabelPlacement =>
+    dir === 1 ? { dx: off, dy: 0, anchor: 'start', side: 'right' } : { dx: -off, dy: 0, anchor: 'end', side: 'left' };
+  const vgap = off + 6;
   const candidates: LabelPlacement[] = [
     preferRight ? side(1) : side(-1),
     preferRight ? side(-1) : side(1),
-    { dx: 0, dy: vgap, anchor: 'middle' },
-    { dx: 0, dy: -vgap, anchor: 'middle' },
+    { dx: 0, dy: vgap, anchor: 'middle', side: 'below' },
+    { dx: 0, dy: -vgap, anchor: 'middle', side: 'above' },
   ];
-  const inside = candidates.filter((c) => fitsViewport(labelRect(at, c, labelW), viewport));
+  // 前の側は少しの食い込みまで許し、ほかの側は少しの余裕を求める(境目で行き来しない)
+  const pad = (c: LabelPlacement): number => (prev === null ? 0 : c.side === prev ? -STICKY_PX : STICKY_PX);
+  const inside = candidates.filter((c) => fitsViewport(labelRect(at, c, labelW), viewport, pad(c)));
   if (inside.length === 0) return ringPx > 0 ? candidates[0] : null;
-  const free = inside.find((c) => !collides(labelRect(at, c, labelW), occupied, owner));
-  return free ?? inside[0];
+  const free = inside.find((c) => !collides(labelRect(at, c, labelW), occupied, owner, pad(c)));
+  return free ?? inside.find((c) => c.side === prev) ?? inside[0];
 }
 
 interface Marker {
@@ -147,6 +171,8 @@ interface Marker {
   ringPx: number;
   labelKey: string;
   labelW: number;
+  /** 前のコマで名前を置いた側 */
+  side: LabelSide | null;
 }
 
 export class MarkerLayer {
@@ -197,7 +223,7 @@ export class MarkerLayer {
 
     root.append(svg, label);
     this.overlay.appendChild(root);
-    return { root, svg, label, visible: false, color: '', ringPx: -1, labelKey: '', labelW: name.length * CHAR_PX };
+    return { root, svg, label, visible: false, color: '', ringPx: -1, labelKey: '', labelW: name.length * CHAR_PX, side: null };
   }
 
   /** 位置データが通過の前後だけにある衛星の画面の情報(bodies が出していない天体だけ) */
@@ -321,7 +347,9 @@ export class MarkerLayer {
         ref,
         occupied,
         owner: index,
+        prev: m.side,
       });
+      m.side = place?.side ?? null;
       if (place) {
         const rect = labelRect(s, place, m.labelW);
         rect.owner = index;
@@ -345,6 +373,7 @@ export class MarkerLayer {
       if (!seen.has(id) && m.visible) {
         m.root.style.display = 'none';
         m.visible = false;
+        m.side = null;
       }
     }
   }

@@ -47,6 +47,13 @@ export interface AppState {
   lookTarget: LookTarget | null;
   /** 「向く」を押すたびに増える通し番号。同じ相手をもう一度押した時も 3D 側が気付けるようにする */
   lookSeq: number;
+  /**
+   * 名場面・出来事から移って向いた時の、向きを保つ範囲(et)。時刻がこの外へ出たら追うのをやめて太陽へ向き直る。
+   * 利用者が「向く」で選んだ相手は null(ずっと追う)
+   */
+  lookHold: { t0: number; t1: number } | null;
+  /** lookHold の外へ出て追うのをやめるたびに増える通し番号(3D 側が太陽へゆっくり向き直る合図) */
+  lookReleaseSeq: number;
   /** 開いた直後の自動再生の段階。既存の項目とは独立で、'title' と 'run' の間は playing も true */
   intro: IntroPhase;
 

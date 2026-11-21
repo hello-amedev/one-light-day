@@ -84,12 +84,13 @@ describe('tick', () => {
     expect(s.get().playing).toBe(false);
     expect(s.tick(0.1)).toBe(false);
   });
-  it('右端では再生を始めない', () => {
+  it('右端で再生を押すと、初めに戻って再生する(play と toggle の両方)', () => {
     const s = make(MAX);
     s.play();
-    expect(s.get().playing).toBe(false);
-    s.toggle();
-    expect(s.get().playing).toBe(false);
+    expect(s.get()).toMatchObject({ et: MIN, playing: true });
+    const t = make(MAX);
+    t.toggle();
+    expect(t.get()).toMatchObject({ et: MIN, playing: true });
   });
 });
 
@@ -289,5 +290,40 @@ describe('開いた直後の自動再生', () => {
     const s = make(MIN);
     s.skipIntro();
     expect(s.get()).toMatchObject({ et: MAX, view: 'overview', playing: false, intro: 'done' });
+  });
+});
+
+describe('名場面から移った後の向き', () => {
+  it('名場面の減速の範囲の中では追い続け、外へ出たら追うのをやめる', () => {
+    const s = make(MIN);
+    s.jumpScene('jupiter');
+    expect(s.get().lookTarget).toBe('jupiter');
+    const seq = s.get().lookReleaseSeq;
+    s.setTime(sc('jupiter').et + sc('jupiter').slowWindow - 1);
+    expect(s.get().lookTarget).toBe('jupiter');
+    expect(s.get().lookReleaseSeq).toBe(seq);
+    s.setTime(sc('jupiter').et + sc('jupiter').slowWindow + 1);
+    expect(s.get()).toMatchObject({ lookTarget: null, lookHold: null, lookReleaseSeq: seq + 1 });
+  });
+  it('再生で範囲を出た時も、追うのをやめる', () => {
+    const s = make(MIN);
+    s.jumpScene('jupiter');
+    s.setRate('year');
+    s.play();
+    for (let i = 0; i < 50 && s.get().lookTarget; i++) s.tick(0.1);
+    expect(s.get().lookTarget).toBeNull();
+    expect(s.get().et).toBeGreaterThan(sc('jupiter').et + sc('jupiter').slowWindow);
+  });
+  it('出来事から移った時は、その出来事の名場面の範囲で追う', () => {
+    const s = make(MIN);
+    s.jumpEvent('ioVolcano');
+    expect(s.get().lookHold).toEqual({ t0: sc('jupiter').et - sc('jupiter').slowWindow, t1: sc('jupiter').et + sc('jupiter').slowWindow });
+  });
+  it('「向く」で選んだ相手は、時刻を動かしても追い続ける', () => {
+    const s = make(MIN);
+    s.jumpScene('jupiter');
+    s.lookAt('saturn');
+    s.setTime(MAX);
+    expect(s.get().lookTarget).toBe('saturn');
   });
 });

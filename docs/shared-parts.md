@@ -81,7 +81,7 @@
 | 球をカメラ中心に縮めて置く(距離 SHELL・半径 r/d×SHELL) | `shellPlacement` / `SHELL` | `src/stage/placement.ts` |
 | 向いた時の向き(視野は変えない。倍率は状態が持つ) | `lookDirection` | `src/stage/look.ts` |
 | ボイジャー本体の視点(モデルの読み込み・カメラの姿勢・機体を重ねて描く) | `CraftView`(`pose` / `drag` / `activate` / `render`)、計算は `craftMath.ts` | `src/stage/craft.ts` |
-| 拡大に合わせた太陽の光・天の川の淡さ・暗い星を読むか | `effectiveZoom` / `sunGlowSizes` / `milkywayZoomGain` / `shouldLoadDeepStars` | `src/stage/zoomView.ts` |
+| 拡大に合わせた太陽の光・天の川の淡さ、暗い星を読むまでの待ち | `effectiveZoom` / `sunGlowSizes` / `milkywayZoomGain` / `DEEP_STARS_DELAY_MS` | `src/stage/zoomView.ts` |
 | 線のすっと薄れる動き・視点による線の濃さ | `stepToward` / `viewLineFade` | `src/stage/fade.ts` |
 | 垂線を出すか(回している間と土星の前後) | `dropWanted` | `src/stage/guide.ts` |
 | 星空のタップ(クリック)を受ける | `attachInput` の `tap`(「星空だけを表示」から戻す) | `src/stage/input.ts` |

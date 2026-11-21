@@ -67,3 +67,27 @@ describe('他の目印との重なり', () => {
     expect(p.anchor === 'middle' || p.anchor === 'end').toBe(true);
   });
 });
+
+describe('左右のちらつき(再生中に境目をまたぐ所)', () => {
+  it('近くの目印と横にほぼ並ぶ間は、前に置いた側を保つ', () => {
+    // 太陽がわずかに右(左に置きたい)でも、前が右なら右のまま
+    expect(placeLabel({ ...base, at: { x: 600, y: 400 }, ref: { x: 610, y: 400 }, prev: 'right' })?.side).toBe('right');
+    // 太陽がわずかに左でも、前が左なら左のまま
+    expect(placeLabel({ ...base, at: { x: 600, y: 400 }, ref: { x: 590, y: 400 }, prev: 'left' })?.side).toBe('left');
+  });
+  it('はっきり反対側になったら入れ替える', () => {
+    expect(placeLabel({ ...base, at: { x: 600, y: 400 }, ref: { x: 660, y: 400 }, prev: 'right' })?.side).toBe('left');
+  });
+  it('画面の中心を横切る間も、前の側を保つ', () => {
+    expect(placeLabel({ ...base, at: { x: 620, y: 400 }, ref: null, prev: 'left' })?.side).toBe('left');
+    expect(placeLabel({ ...base, at: { x: 800, y: 400 }, ref: null, prev: 'left' })?.side).toBe('right');
+  });
+  it('他の名前にわずかに食い込むだけなら、前の側を保つ', () => {
+    // 右に置いた名前(x 615〜655 ほど)の端に、別の名前が 2px かかる
+    const touching = [{ x0: 653, y0: 391, x1: 700, y1: 409, owner: 1 }];
+    const ref = { x: 590, y: 400 };
+    expect(placeLabel({ ...base, at: { x: 600, y: 400 }, ref, occupied: touching, owner: 0, prev: 'right' })?.side).toBe('right');
+    // 前の側を持たない時は、かかっている側を避ける
+    expect(placeLabel({ ...base, at: { x: 600, y: 400 }, ref, occupied: touching, owner: 0 })?.side).not.toBe('right');
+  });
+});
