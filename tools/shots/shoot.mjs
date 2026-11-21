@@ -49,15 +49,18 @@ const TITLE_OVERLAY = `(async () => {
   const name = document.createElement('div');
   name.textContent = 'ONE LIGHT-DAY';
   name.style.cssText = 'font-family:var(--font-title);font-size:46px;letter-spacing:0.4em;color:var(--color-text);text-shadow:var(--text-halo),0 0 18px var(--color-space);';
+  const days = document.createElement('div');
+  days.textContent = '17,971 EARTH DAYS';
+  days.style.cssText = 'font-family:var(--font-numeric);font-size:27px;letter-spacing:0.24em;color:var(--color-gold);text-shadow:var(--text-halo),0 0 14px var(--color-space);margin-top:-2px;';
   const sub = document.createElement('div');
   sub.textContent = 'ボイジャー1号、1光日の旅';
   sub.style.cssText = 'font-family:var(--font-body);font-size:20px;letter-spacing:0.18em;color:var(--color-text-dim);text-shadow:var(--text-halo),0 0 14px var(--color-space);';
   const rule = document.createElement('div');
   rule.style.cssText = 'width:56px;height:2px;background:var(--color-gold);';
-  root.append(name, rule, sub);
+  root.append(name, days, rule, sub);
   document.body.append(root);
   await document.fonts.ready;
-  await Promise.all([document.fonts.load('46px Michroma'), document.fonts.load('20px "Zen Kaku Gothic New"', 'ボイジャー1号、1光日の旅')]);
+  await Promise.all([document.fonts.load('46px Michroma'), document.fonts.load('27px "Share Tech Mono"'), document.fonts.load('20px "Zen Kaku Gothic New"', 'ボイジャー1号、1光日の旅')]);
   return document.fonts.check('46px Michroma');
 })()`;
 

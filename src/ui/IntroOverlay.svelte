@@ -36,6 +36,7 @@
 
 <div class="title" class:shown={showTitle} class:quick aria-hidden="true">
   <div class="name">{txt.title}</div>
+  <div class="days">{txt.days}</div>
   <div class="sub">{txt.subtitle}</div>
 </div>
 
@@ -56,7 +57,8 @@
     text-shadow: var(--text-halo);
   }
   .title {
-    top: 50%;
+    /* 画面の中央には太陽の光がある(打ち上げの日の引きの眺め)。題字はその上に置き、光と重ねない */
+    top: 32%;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
@@ -75,6 +77,15 @@
     /* 字間の余りが右にだけ付くので、同じだけ左を空けて中央に見せる */
     padding-left: var(--intro-title-tracking);
     color: var(--color-text);
+  }
+  /* 題字の 2 行目(日数)。数字の字体と金で、1 行目の「1」との対比を見せる */
+  .days {
+    font-family: var(--font-numeric);
+    /* スマホの幅でも読める大きさを下限にする */
+    font-size: max(var(--text-s), calc(var(--intro-title-size) * 0.56));
+    letter-spacing: calc(var(--intro-title-tracking) * 0.6);
+    padding-left: calc(var(--intro-title-tracking) * 0.6);
+    color: var(--color-gold);
   }
   .sub {
     font-family: var(--font-body);

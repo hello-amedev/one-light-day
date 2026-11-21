@@ -36,7 +36,7 @@ GitHub: hello-amedev/voyager(Private)。公開は GitHub Pages(ame-dev.com の�
 ## 3. 次回着手するなら
 
 1. あめさんの確認結果を直す: スマホの実機、文言の一覧(docs/texts.md。辞書を直したら `node scripts/dump-texts.mjs` で作り直す)、見え方(天の川の濃さは `--milkyway-gain`、太陽の光は `--sun-glare`)
-2. サイト名と公開先が決まったら: 辞書 `src/lib/i18n/ja/intro.ts`(題字と副題)、`index.html` の題と説明、`.env` の `VITE_SITE_URL`、`public/og.jpg`(`node tools/shots/shoot.mjs`)を直す
+2. 公開先(URL の末尾)が決まったら: `.env` の `VITE_SITE_URL` を直す。サイト名を変える時は、辞書 `src/lib/i18n/ja/intro.ts`、`index.html` の題と説明、`tools/shots/shoot.mjs` の題字を直して `public/og.jpg` を撮り直す(`node tools/shots/shoot.mjs og <開発サーバーの URL>`)
 3. 公開: docs/publish.md の手順。**公開の操作は、あめさんの確認を取ってから**
 4. 地球の高精細の画像(8,192 画素)が取得できるようになったら差し替える(docs/assets/textures.md)
 
@@ -44,8 +44,7 @@ GitHub: hello-amedev/voyager(Private)。公開は GitHub Pages(ame-dev.com の�
 
 - スマホの実機での確認(滑らかさ、指での操作、ホームバーとの重なり、メモリ)
 - 文言の一覧(docs/texts.md)の確認。名場面の短い文と「このサイトについて」の本文は下書き
-- サイト名(仮称 ONE LIGHT-DAY)、URL の末尾(仮に one-light-day)、公開の日(候補: 太陽から 1 光日の 2027-02-04 ごろ)
-- 題字の画面で、太陽の光条が題字に重なる(読めるが、構図として要検討)
+- URL の末尾(仮に one-light-day)と、公開の日(候補: 太陽から 1 光日の 2027-02-04 ごろ)。サイト名は「ONE LIGHT-DAY, 17,971 EARTH DAYS」に決定済み(2026-11-21)
 - 星の数(約9千個のまま / 約4万個)
 - スマホの実機での滑らかさと操作の確認(`npm run dev:lan` → 同じ Wi-Fi のスマホから Network の URL を開く)
 - 星のデータ(HYG v4.4、CC BY-SA 4.0)の継承の範囲は「星のデータだけ」と置いた。第3段階の素材の一覧で確認

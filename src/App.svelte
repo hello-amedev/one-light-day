@@ -24,6 +24,8 @@
   let stage = $state.raw<Stage | null>(null);
   /** 操作しない間(UiLayer が知らせる)。目印の層と軌道の線を文字や目盛りと一緒に薄くする */
   let idle = $state(false);
+  /** 開いた直後の題字が出ている間か。その間は、天体の目印と名前を隠す(題字に重なって読めなくなるため) */
+  let titleShown = $state(false);
   /** 3D の表示を始められなかった(WebGL が無いなど)。静止画と案内だけを出す */
   let no3d = $state(false);
 
@@ -89,6 +91,8 @@
         );
     if (mode === 'play') created.startIntro();
     else if (mode === 'still') created.skipIntro();
+    titleShown = created.get().intro === 'title';
+    created.subscribe((s) => (titleShown = s.intro === 'title'));
     store = created;
     status = 'ready';
 
@@ -134,7 +138,7 @@
 <main class="app">
   <!-- 重ね順: 3D の canvas → 目印の層(3D の担当が使う) → 操作の部品の層 -->
   <canvas class="stage" bind:this={canvas}></canvas>
-  <div class="markers" class:idle bind:this={overlay}></div>
+  <div class="markers" class:idle class:hidden-for-title={titleShown} bind:this={overlay}></div>
 
   {#if no3d}
     <Fallback />
@@ -175,6 +179,12 @@
   /* 操作の部品と同じ薄さ・同じ速さで薄くする */
   .markers.idle {
     opacity: var(--idle-opacity);
+  }
+  /* 題字の間は目印を出さない。隠す時は一瞬で(開いた直後に名前が一度見えてから消えるのを防ぐ)、
+     題字が消えた後は、上の決まりの薄さ・濃さへなめらかに戻る */
+  .markers.hidden-for-title {
+    opacity: 0;
+    transition: none;
   }
   .message {
     position: absolute;
