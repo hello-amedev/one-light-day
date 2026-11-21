@@ -71,7 +71,11 @@ export function createStage(options: StageOptions): Stage {
   const starfield = createStarfield(stars, theme.starGain);
   const orbits = new OrbitLines(eph, theme);
   const track = new TrackLines(eph, theme);
-  const bodies = new Bodies(eph, theme);
+  const bodies = new Bodies(eph, theme, {
+    maxTextureSize: renderer.capabilities.maxTextureSize,
+    maxAnisotropy: renderer.capabilities.getMaxAnisotropy(),
+    onTextureLoaded: () => invalidate(),
+  });
   const markers = new MarkerLayer(overlay, eph);
   // 天の川は最初のコマを描いた後に読み込む(星空が先に出る)
   const milkyway = createMilkyway({
@@ -253,7 +257,7 @@ export function createStage(options: StageOptions): Stage {
     stamps.push(now);
     while (stamps.length > 0 && now - stamps[0] > 1000) stamps.shift();
 
-    if (state.playing || rig.animating || chrome !== chromeTarget || mwFading) invalidate();
+    if (state.playing || rig.animating || bodies.animating || chrome !== chromeTarget || mwFading) invalidate();
     else lastFrameMs = null;
   }
 

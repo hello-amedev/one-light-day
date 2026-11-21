@@ -68,6 +68,12 @@
 | 目印と名前(DOM)・重なりの間引き・名前を出す側(`placeLabel`)・優先度(`priorityOf`) | `MarkerLayer` | `src/stage/markers.ts` |
 | 背景の天の川(向きの式 `skyUV`・画像の選び方・淡さ) | `createMilkyway` | `src/stage/milkyway.ts` |
 | 天体の目印の画面の位置を 3D から受け取る | `Stage.watchBody(body, listener)` | `src/stage/index.ts` |
+| 天体の自転の向き(極・自転の角度)を黄道へ移す行列 | `bodyToEcliptic` / `poleDirection` / `toBodyFrame` / `surfacePoint`(要素は `ROTATION`、扁平は `FLATTENING`) | `src/stage/rotation.ts` |
+| 土星の環の濃さの表・環と土星の影の計算(試験できる版。シェーダーは同じ式) | `ringSample` / `planetShadowOnRing` / `ringShadowOnPlanet` | `src/stage/saturnRings.ts` |
+| 天体の画像の読み込み(manifest は 1 回、画像は大きく見えてから 1 回) | `SurfaceTextures.request`、hi / lo の選び方は `chooseVariant` | `src/stage/surfaceTextures.ts` / `textureChoice.ts` |
+| 天体・環・大気のシェーダー | `surfaceFragment` / `ringFragment` / `haloFragment` | `src/stage/bodyShaders.ts` |
+| 太陽の光(にじみ・芯・十字の光条)の絵 | `makeGlowTexture` / `makeCoreTexture` / `makeSpikeTexture` | `src/stage/textures.ts` |
+| 目印と名前(DOM)・重なりの間引き | `MarkerLayer` | `src/stage/markers.ts` |
 | 確認用の URL(?t= ?view= ?look=)を状態に当てる | `applyUrlState` / `parseUrlState` | `src/lib/urlState.ts` |
 
 注意: 天体の位置を太陽中心どうしの引き算で作らない(通過の距離がずれる)。球は奥行きの判定を使わず、遠い順の `renderOrder` で描く。
