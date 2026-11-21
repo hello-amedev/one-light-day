@@ -1,0 +1,164 @@
+{
+  "earth": {
+    "hi": {
+      "file": "earth.hi.jpg",
+      "width": 2048,
+      "height": 1024,
+      "bytes": 568510
+    },
+    "lo": {
+      "file": "earth.lo.jpg",
+      "width": 1024,
+      "height": 512,
+      "bytes": 176690
+    },
+    "lon0": -180,
+    "lonEast": true,
+    "credit": "NASA Goddard Space Flight Center (image by Reto Stöckli, enhancements by Robert Simmon)",
+    "source": "https://science.nasa.gov/earth/earth-observatory/the-blue-marble-true-color-global-imagery-at-1km-resolution/",
+    "note": "Blue Marble(2002年版。2001年の観測の合成。陸・海・氷・雲)の 2048 画素版。8192 画素版の配布元が応答しないため元のまま使い、拡大していない。極の行と継ぎ目をなじませた"
+  },
+  "moon": {
+    "hi": {
+      "file": "moon.hi.jpg",
+      "width": 2048,
+      "height": 1024,
+      "bytes": 381915
+    },
+    "lo": {
+      "file": "moon.lo.jpg",
+      "width": 1024,
+      "height": 512,
+      "bytes": 99699
+    },
+    "lon0": -180,
+    "lonEast": true,
+    "credit": "NASA's Scientific Visualization Studio (CGI Moon Kit, LRO)",
+    "source": "https://svs.gsfc.nasa.gov/4720/",
+    "note": "2019年版の色の地図(4096×2048)を縮小。極の行と継ぎ目をなじませた"
+  },
+  "jupiter": {
+    "hi": {
+      "file": "jupiter.hi.jpg",
+      "width": 3600,
+      "height": 1800,
+      "bytes": 570211
+    },
+    "lo": {
+      "file": "jupiter.lo.jpg",
+      "width": 2048,
+      "height": 1024,
+      "bytes": 263769
+    },
+    "lon0": 0,
+    "lonEast": true,
+    "credit": "NASA/JPL/Space Science Institute (Cassini, December 2000)",
+    "source": "https://www.jpl.nasa.gov/images/pia07782-cassinis-best-maps-of-jupiter-cylindrical-map/",
+    "note": "3601×1801 を 3600×1800 に揃えた。経度の基準は配布ページに無く、左端を 0 とした仮の値(木星には固定の地形が無い)。右が東であることは、大赤斑の後ろに伸びる乱れが左(西)側にあることで確認。極の行と継ぎ目をなじませた"
+  },
+  "io": {
+    "hi": {
+      "file": "io.hi.jpg",
+      "width": 2048,
+      "height": 1024,
+      "bytes": 306776
+    },
+    "lo": {
+      "file": "io.lo.jpg",
+      "width": 1024,
+      "height": 512,
+      "bytes": 96301
+    },
+    "lon0": -180,
+    "lonEast": true,
+    "credit": "U.S. Geological Survey (Galileo SSI and Voyager images)",
+    "source": "https://astrogeology.usgs.gov/search/map/io_galileo_ssi_voyager_color_merged_global_mosaic_1km",
+    "note": "Galileo と Voyager の色つき全球モザイクを縮小。画像のない極などの穴は、周りの色でなだらかに埋めた。極の行と継ぎ目をなじませた"
+  },
+  "europa": {
+    "hi": {
+      "file": "europa.hi.jpg",
+      "width": 2048,
+      "height": 1024,
+      "bytes": 466360
+    },
+    "lo": {
+      "file": "europa.lo.jpg",
+      "width": 1024,
+      "height": 512,
+      "bytes": 117662
+    },
+    "lon0": 0,
+    "lonEast": true,
+    "credit": "U.S. Geological Survey (Voyager and Galileo SSI images)",
+    "source": "https://astrogeology.usgs.gov/search/map/europa_voyager_galileo_ssi_global_mosaic_500m",
+    "note": "元の地図は白黒。明るさは元のまま、黄みのある白の色を乗せた(演出)。穴は周りの明るさでなだらかに埋めた。極の行と継ぎ目をなじませた"
+  },
+  "ganymede": {
+    "hi": {
+      "file": "ganymede.hi.jpg",
+      "width": 2048,
+      "height": 1024,
+      "bytes": 360449
+    },
+    "lo": {
+      "file": "ganymede.lo.jpg",
+      "width": 1024,
+      "height": 512,
+      "bytes": 91243
+    },
+    "lon0": 0,
+    "lonEast": true,
+    "credit": "U.S. Geological Survey (Voyager and Galileo SSI images)",
+    "source": "https://astrogeology.usgs.gov/search/map/ganymede_voyager_galileo_ssi_global_mosaic_1km",
+    "note": "元の地図は白黒。明るさは元のまま、灰がかった褐色の色を乗せた(演出)。穴は周りの明るさでなだらかに埋めた。極の行と継ぎ目をなじませた"
+  },
+  "callisto": {
+    "hi": {
+      "file": "callisto.hi.jpg",
+      "width": 2048,
+      "height": 1024,
+      "bytes": 388409
+    },
+    "lo": {
+      "file": "callisto.lo.jpg",
+      "width": 1024,
+      "height": 512,
+      "bytes": 95055
+    },
+    "lon0": 0,
+    "lonEast": true,
+    "credit": "U.S. Geological Survey (Voyager and Galileo SSI images)",
+    "source": "https://astrogeology.usgs.gov/search/map/callisto_voyager_galileo_ssi_global_mosaic_1km",
+    "note": "元の地図は白黒。明るさは元のまま、暗い褐色の色を乗せた(演出)。穴は周りの明るさでなだらかに埋めた。極の行と継ぎ目をなじませた"
+  },
+  "milkyway": {
+    "hi": {
+      "file": "milkyway.hi.jpg",
+      "width": 4096,
+      "height": 2048,
+      "bytes": 2481174
+    },
+    "lo": {
+      "file": "milkyway.lo.jpg",
+      "width": 2048,
+      "height": 1024,
+      "bytes": 511462
+    },
+    "ra0": 180,
+    "raIncreasesRight": false,
+    "decUp": true,
+    "credit": "NASA/Goddard Space Flight Center Scientific Visualization Studio; Gaia DR2: ESA/Gaia/DPAC",
+    "source": "https://svs.gsfc.nasa.gov/4851/",
+    "note": "天球座標(赤道座標 J2000)の天の川。左端が赤経 180度(12h)、中央が 0h で、赤経は右へ向かって減る。上が天の北。露出とガンマで淡く調整し、8bit に落とした(調整値は docs/assets/textures.md)。Gaia のデータは CC BY-NC 3.0 IGO(非営利に限る)"
+  },
+  "pbd": {
+    "file": "pbd.jpg",
+    "width": 1600,
+    "height": 1583,
+    "bytes": 268228,
+    "credit": "NASA/JPL-Caltech",
+    "source": "https://science.nasa.gov/photojournal/pale-blue-dot-revisited/",
+    "note": "PIA23645(2020年の再処理版)。配布されている 5230×5175 画素の版を、長辺 1600 画素に縮めただけ。地図ではなく写真"
+  }
+}
