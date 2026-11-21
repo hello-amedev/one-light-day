@@ -68,6 +68,8 @@ tests/               自動テスト(担当ごとに tests/<領域>/)
 - `src/lib/stars/types.ts` — `StarCatalog`(`[x, y, z, mag, bv]` × count、明るい順、xyz は黄道 J2000 の単位ベクトル)
 - `src/lib/store/types.ts` — `AppState` / `AppStore` / `RATE_SECONDS`
 - `src/lib/scenes.ts` — `SCENES`(名場面の時刻と、向く相手、自動減速の幅)
+- `src/lib/events.ts` — `STORY_EVENTS`(出来事の時刻・精度・含まれる名場面。第6段階)
+- `src/lib/zoom.ts` — 倍率(×1 = 短い辺 60 度、上限は狭角カメラの 0.42 度)と本体の視点の距離の限度。倍率と距離は状態(`magnification` / `craftDistance`)が持ち、引きの眺めの拡大だけ 3D 側が持つ
 - `src/stage/index.ts` — `createStage({ canvas, overlay, eph, stars, store })`
 
 ## 5. 位置データのファイルの形
