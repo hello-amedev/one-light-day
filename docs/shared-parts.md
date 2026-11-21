@@ -63,6 +63,11 @@
 | 軌道の楕円を位置と速度から求める | `orbitFromState` / `orbitLoop` | `src/stage/orbit.ts` |
 | 画面の位置・円盤の半径(px) | `projectToScreen` / `screenRadiusPx` | `src/stage/frame.ts` |
 | ベクトル・方位仰角・球面補間・加減速 | `math.ts` の関数 | `src/stage/math.ts` |
+| 天体の自転の向き(極・自転の角度)を黄道へ移す行列 | `bodyToEcliptic` / `poleDirection` / `toBodyFrame` / `surfacePoint`(要素は `ROTATION`、扁平は `FLATTENING`) | `src/stage/rotation.ts` |
+| 土星の環の濃さの表・環と土星の影の計算(試験できる版。シェーダーは同じ式) | `ringSample` / `planetShadowOnRing` / `ringShadowOnPlanet` | `src/stage/saturnRings.ts` |
+| 天体の画像の読み込み(manifest は 1 回、画像は大きく見えてから 1 回) | `SurfaceTextures.request`、hi / lo の選び方は `chooseVariant` | `src/stage/surfaceTextures.ts` / `textureChoice.ts` |
+| 天体・環・大気のシェーダー | `surfaceFragment` / `ringFragment` / `haloFragment` | `src/stage/bodyShaders.ts` |
+| 太陽の光(にじみ・芯・十字の光条)の絵 | `makeGlowTexture` / `makeCoreTexture` / `makeSpikeTexture` | `src/stage/textures.ts` |
 | 目印と名前(DOM)・重なりの間引き | `MarkerLayer` | `src/stage/markers.ts` |
 | 確認用の URL(?t= ?view= ?look=)を状態に当てる | `applyUrlState` / `parseUrlState` | `src/lib/urlState.ts` |
 
