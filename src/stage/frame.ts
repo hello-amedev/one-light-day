@@ -14,6 +14,8 @@ export interface FrameContext {
   width: number;
   height: number;
   pixelRatio: number;
+  /** 見え方に使う拡大の度合い(1 以上。zoomView.ts の effectiveZoom)。太陽の光の大きさなどに使う */
+  zoom: number;
 }
 
 /** カメラからの相対位置 rel を画面の座標(CSS px、左上が原点)にする。カメラの後ろなら null */

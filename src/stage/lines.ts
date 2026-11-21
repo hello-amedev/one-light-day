@@ -72,8 +72,14 @@ export class OrbitLines {
     }
   }
 
-  /** chrome: 0(薄い)〜 1(通常)。glow: 惑星ごとの明るさの足し分 0〜1(PLANET_IDS の順。早回しで 1 周以上進む惑星) */
-  update(ctx: FrameContext, cameraSun: Vec3, chrome: number, glow?: readonly number[]): void {
+  /**
+   * chrome: 0(薄い)〜 1(通常)。glow: 惑星ごとの明るさの足し分 0〜1(PLANET_IDS の順。早回しで 1 周以上進む惑星)。
+   * fade: 表示の切り替え(メニューの「惑星の軌道」・「星空だけを表示」)による濃さ 0〜1。ほぼ 0 の間は描かない
+   */
+  update(ctx: FrameContext, cameraSun: Vec3, chrome: number, glow?: readonly number[], fade = 1): void {
+    const on = fade > 0.001;
+    this.group.visible = on;
+    if (!on) return;
     if (Math.abs(ctx.et - this.loopEt) > ORBIT_REFRESH_S) {
       this.loopEt = ctx.et;
       PLANET_IDS.forEach((id, i) => {
@@ -93,7 +99,7 @@ export class OrbitLines {
       }
       line.geometry.attributes.position.needsUpdate = true;
       line.geometry.setDrawRange(0, src.length / 3);
-      (line.material as THREE.LineBasicMaterial).opacity = Math.min(1, opacity + (glow?.[i] ?? 0) * ORBIT_GLOW);
+      (line.material as THREE.LineBasicMaterial).opacity = Math.min(1, opacity + (glow?.[i] ?? 0) * ORBIT_GLOW) * fade;
     });
   }
 
@@ -141,8 +147,14 @@ export class TrackLines {
   /**
    * cameraSun: カメラの太陽中心の位置(= ボイジャーの位置 + offset)。
    * いまの時刻の端は、ボイジャーの現在位置(カメラ相対で −offset)にぴったり合わせる。
+   * fade: 軌跡の濃さ 0〜1。ボイジャーの視界と本体の視点では 0(出さない)、引きの眺めで 1。「星空だけを表示」の間も 0。ほぼ 0 の間は描かない
    */
-  update(ctx: FrameContext, cameraSun: Vec3): void {
+  update(ctx: FrameContext, cameraSun: Vec3, fade = 1): void {
+    const on = fade > 0.001;
+    this.group.visible = on;
+    if (!on) return;
+    (this.past.material as THREE.LineBasicMaterial).opacity = TRACK_PAST_OPACITY * fade;
+    (this.future.material as THREE.LineBasicMaterial).opacity = TRACK_FUTURE_OPACITY * fade;
     const t = this.track;
     const k = this.indexBefore(ctx.et);
     const here: Vec3 = [-ctx.offset[0], -ctx.offset[1], -ctx.offset[2]];

@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { etFromIso } from '../../src/lib/ephemeris/time';
 import { SCENES } from '../../src/lib/scenes';
-import { footOnEcliptic, passedSceneCount } from '../../src/stage/guide';
+import {
+  DROP_AFTER_DRAG_MS,
+  SATURN_DROP_AFTER_S,
+  SATURN_DROP_BEFORE_S,
+  dropWanted,
+  footOnEcliptic,
+  inSaturnDropWindow,
+  passedSceneCount,
+} from '../../src/stage/guide';
 
 describe('垂線の足もと', () => {
   it('ボイジャーの位置から、黄道面(z = 0)の上の点を作る', () => {
@@ -34,6 +42,39 @@ describe('名場面の刻み', () => {
     for (const s of SCENES) {
       expect(passedSceneCount(s.et - 1)).toBe(SCENES.filter((o) => o.et < s.et).length);
       expect(passedSceneCount(s.et)).toBe(SCENES.filter((o) => o.et <= s.et).length);
+    }
+  });
+});
+
+describe('垂線を出す時', () => {
+  const saturn = SCENES.find((s) => s.id === 'saturn')!;
+  const ordinary = etFromIso('2010-01-01T00:00:00Z');
+
+  it('普段は出さない', () => {
+    expect(dropWanted(ordinary, null)).toBe(false);
+    expect(dropWanted(etFromIso('1977-12-01T00:00:00Z'), null)).toBe(false);
+    expect(dropWanted(etFromIso('2026-11-18T00:00:00Z'), null)).toBe(false);
+  });
+  it('引きの眺めを回している間と、回し終えてから 3 秒は出す', () => {
+    expect(dropWanted(ordinary, 0)).toBe(true);
+    expect(dropWanted(ordinary, DROP_AFTER_DRAG_MS)).toBe(true);
+    expect(dropWanted(ordinary, DROP_AFTER_DRAG_MS + 1)).toBe(false);
+    expect(DROP_AFTER_DRAG_MS).toBe(3000);
+  });
+  it('土星の場面の 30 日前から 90 日後までは、回していなくても出す', () => {
+    expect(SATURN_DROP_BEFORE_S).toBe(30 * 86400);
+    expect(SATURN_DROP_AFTER_S).toBe(90 * 86400);
+    expect(inSaturnDropWindow(saturn.et)).toBe(true);
+    expect(inSaturnDropWindow(saturn.et - 29 * 86400)).toBe(true);
+    expect(inSaturnDropWindow(saturn.et + 89 * 86400)).toBe(true);
+    expect(inSaturnDropWindow(saturn.et - 31 * 86400)).toBe(false);
+    expect(inSaturnDropWindow(saturn.et + 91 * 86400)).toBe(false);
+    expect(dropWanted(saturn.et, null)).toBe(true);
+  });
+  it('木星の場面など、ほかの名場面の前後では出さない', () => {
+    for (const s of SCENES) {
+      if (s.id === 'saturn') continue;
+      expect(dropWanted(s.et, null)).toBe(false);
     }
   });
 });

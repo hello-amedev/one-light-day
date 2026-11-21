@@ -3,6 +3,7 @@
 // (球の貼り方や UV の継ぎ目に頼らず、方向 → 画像の位置を 1 つの式で決める。同じ式を TypeScript にも置き、向きの検査に使う)。
 import * as THREE from 'three';
 import { DEG, type Vec3 } from './math';
+import { milkywayZoomGain } from './zoomView';
 
 /** 黄道傾斜角(J2000)。黄道 ↔ 赤道の変換に使う */
 export const OBLIQUITY_DEG = 23.4392911;
@@ -19,7 +20,8 @@ const FADE_S = 1;
 /** 画面の短い辺 × 画素比がこれ未満(または粗いポインタ)なら、小さい画像を使う */
 const LO_BELOW_PX = 1000;
 
-/** 視野(縦、度)がこれ以下では画像の粗さが目立つので、明るさを落とす。落とす下限の倍率は NARROW_GAIN */
+/** 視野(縦、度)がこれ以下では画像の粗さが目立つので、明るさを落とす。落とす下限の倍率は NARROW_GAIN。
+ *  第6段階からは拡大の倍率に合わせた淡さ(zoomView.ts の milkywayZoomGain)を使い、この関数は検査用に残してある */
 const NARROW_FOV_DEG = 20;
 const MIN_FOV_DEG = 2;
 const NARROW_GAIN = 0.55;
@@ -87,10 +89,32 @@ const vertex = /* glsl */ `
 
 const fragment = /* glsl */ `
   uniform sampler2D uMap;
+  uniform vec2 uTexSize;
   uniform float uGain;
   varying vec3 vDir;
   const float PI = 3.14159265358979;
   const float OBLIQ = ${(OBLIQUITY_DEG * DEG).toFixed(12)};
+  // 三次の B スプライン補間(4 回の読み出しで済ませる形)。双一次補間は画素のマス目(ひし形の筋)が出るが、
+  // これは画素の値をなめらかにつないで、どこまで引き伸ばしても格子が出ない
+  vec3 sampleSmooth(vec2 uv, vec2 gx, vec2 gy) {
+    vec2 coord = uv * uTexSize - 0.5;
+    vec2 i = floor(coord);
+    vec2 f = coord - i;
+    vec2 w0 = (1.0 - f) * (1.0 - f) * (1.0 - f) / 6.0;
+    vec2 w1 = (4.0 - 6.0 * f * f + 3.0 * f * f * f) / 6.0;
+    vec2 w2 = (1.0 + 3.0 * f + 3.0 * f * f - 3.0 * f * f * f) / 6.0;
+    vec2 w3 = f * f * f / 6.0;
+    vec2 g0 = w0 + w1;
+    vec2 g1 = w2 + w3;
+    vec2 p0 = (i - 1.0 + w1 / g0 + 0.5) / uTexSize;
+    vec2 p1 = (i + 1.0 + w3 / g1 + 0.5) / uTexSize;
+    vec3 a = textureGrad(uMap, vec2(p0.x, p0.y), gx, gy).rgb;
+    vec3 b = textureGrad(uMap, vec2(p1.x, p0.y), gx, gy).rgb;
+    vec3 c = textureGrad(uMap, vec2(p0.x, p1.y), gx, gy).rgb;
+    vec3 e = textureGrad(uMap, vec2(p1.x, p1.y), gx, gy).rgb;
+    return g0.y * (g0.x * a + g1.x * b) + g1.y * (g0.x * c + g1.x * e);
+  }
+
   void main() {
     vec3 d = normalize(vDir);
     float c = cos(OBLIQ);
@@ -111,16 +135,26 @@ const fragment = /* glsl */ `
     vec2 gx = alt ? gx2 : gx1;
     vec2 gy = alt ? gy2 : gy1;
     vec3 tex = textureGrad(uMap, vec2(u, v), gx, gy).rgb;
+    // 画像の 1 画素が画面の 1 画素より大きく伸びている時(拡大した時)だけ、なめらかな補間に替える。
+    // 縮小や等倍では、ミップマップの双一次補間のまま(細かさが落ちない)
+    float lod = log2(max(length(gx * uTexSize), length(gy * uTexSize)) + 1e-9);
+    if (lod < 1.5) {
+      vec3 smoothTex = sampleSmooth(vec2(u, v), gx, gy);
+      tex = mix(tex, smoothTex, 1.0 - smoothstep(0.5, 1.5, lod));
+    }
     // 画像は 8bit に落とす時にガンマで持ち上げてある。そのままでは星空の主役を奪うので、暗い所を沈めて帯の濃い所だけ残す
-    gl_FragColor = vec4(pow(tex, vec3(${CURVE.toFixed(2)})) * uGain, 1.0);
+    vec3 outc = pow(max(tex, 0.0), vec3(${CURVE.toFixed(2)})) * uGain;
+    // 淡く伸ばした暗い所は 8bit の段が見えやすいので、1 段の半分ほどのゆらぎを足す
+    float n = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+    gl_FragColor = vec4(outc + (n - 0.5) / 255.0, 1.0);
   }
 `;
 
 export interface Milkyway {
   /** 最初のコマを描いた後に呼ぶ。画像を読み込み、終わったら淡く浮かび上がらせる */
   load(): void;
-  /** 毎コマ呼ぶ。明るさを更新し、浮かび上がっている間(描き直しを続ける間)は true を返す */
-  update(nowMs: number, verticalFovDeg: number): boolean;
+  /** 毎コマ呼ぶ。明るさ(拡大に合わせた淡さを含む)を更新し、浮かび上がっている間(描き直しを続ける間)は true を返す。zoom は effectiveZoom の値 */
+  update(nowMs: number, zoom: number): boolean;
   object: THREE.Mesh;
   dispose(): void;
 }
@@ -140,7 +174,7 @@ export function createMilkyway(options: MilkywayOptions): Milkyway {
   const material = new THREE.ShaderMaterial({
     vertexShader: vertex,
     fragmentShader: fragment,
-    uniforms: { uMap: { value: null }, uGain: { value: 0 } },
+    uniforms: { uMap: { value: null }, uTexSize: { value: new THREE.Vector2(1, 1) }, uGain: { value: 0 } },
     // 星・太陽の光と同じ足し合わせ。画像は淡く調整済みなので、地の色に足すだけで足りる
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -179,6 +213,8 @@ export function createMilkyway(options: MilkywayOptions): Milkyway {
           tex.magFilter = THREE.LinearFilter;
           tex.anisotropy = 4;
           texture = tex;
+          const img = tex.image as { width: number; height: number };
+          material.uniforms.uTexSize.value.set(img.width, img.height);
           material.uniforms.uMap.value = tex;
           object.visible = true;
           fading = true;
@@ -191,12 +227,12 @@ export function createMilkyway(options: MilkywayOptions): Milkyway {
         },
       );
     },
-    update(nowMs, verticalFovDeg) {
+    update(nowMs, zoom) {
       if (!texture) return false;
       loadedAtMs ??= nowMs;
       const p = Math.min(1, (nowMs - loadedAtMs) / (FADE_S * 1000));
       const eased = p * p * (3 - 2 * p);
-      material.uniforms.uGain.value = options.gain * BASE_GAIN * eased * narrowFovGain(verticalFovDeg);
+      material.uniforms.uGain.value = options.gain * BASE_GAIN * eased * milkywayZoomGain(zoom);
       if (p >= 1) fading = false;
       return fading;
     },

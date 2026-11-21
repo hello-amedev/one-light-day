@@ -24,6 +24,7 @@ import { relativePosition, shellPlacement, SHELL } from './placement';
 import { bodyToEcliptic, EQUATORIAL_RADIUS_KM, FLATTENING, ROTATION, toBodyFrame, type Mat3 } from './rotation';
 import { SurfaceTextures } from './surfaceTextures';
 import type { Theme } from './theme';
+import { sunGlowSizes } from './zoomView';
 import { makeCoreTexture, makeDotTexture, makeGlowTexture, makeSpikeTexture } from './textures';
 
 /** この半径(px)より小さい球は、光の点で描く */
@@ -651,16 +652,17 @@ export class Bodies {
 
   /**
    * 太陽の光。にじみ + 芯 + 細い十字の光条。
-   * 大きさは距離で変える: 近くでは大きく、173 天文単位でも「ひときわ明るい星」と分かる大きさを保つ(画面の短い辺で頭打ち)。
+   * 大きさは画面の px で決める(sunGlowSizes)。距離で変え、近くでは大きく、173 天文単位でも「ひときわ明るい星」と分かる大きさを保つ。
+   * 拡大するほど縮めるので、上限まで拡大しても光が画面を覆わず、地球の点と見分けられる。
    */
   private layoutSun(base: number, ctx: FrameContext, kmPerPx: number): void {
-    const short = Math.min(ctx.width, ctx.height);
-    const au = Math.max(this.sunDistanceKm / AU_KM, 1);
-    // 1 天文単位で 1、200 天文単位で 0 になる近さ
-    const t = clamp(1 - Math.log10(au) / Math.log10(200), 0, 1);
-    const glowPx = Math.min((64 + 240 * t * t + this.sunDiscPx * 4) * this.glare, short * 0.9);
-    const corePx = Math.min(20 + 36 * t + this.sunDiscPx * 1.2, short * 0.4);
-    const spikePx = Math.min((150 + 520 * t) * Math.sqrt(this.glare), short * 1.1);
+    const { glowPx, corePx, spikePx, spikeOpacity } = sunGlowSizes({
+      au: this.sunDistanceKm / AU_KM,
+      discPx: this.sunDiscPx,
+      shortPx: Math.min(ctx.width, ctx.height),
+      glare: this.glare,
+      zoom: ctx.zoom,
+    });
     for (const s of [this.glow, this.core, this.spikes]) {
       s.visible = true;
       s.position.copy(this.sunPos);
@@ -668,7 +670,7 @@ export class Bodies {
     this.glow.scale.setScalar(glowPx * kmPerPx);
     this.core.scale.setScalar(corePx * kmPerPx);
     this.spikes.scale.setScalar(spikePx * kmPerPx);
-    (this.spikes.material as THREE.SpriteMaterial).opacity = 0.3 + 0.3 * t;
+    (this.spikes.material as THREE.SpriteMaterial).opacity = spikeOpacity;
     this.glow.renderOrder = base + 1;
     this.spikes.renderOrder = base + 2;
     this.core.renderOrder = base + 3;
