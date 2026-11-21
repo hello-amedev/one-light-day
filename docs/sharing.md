@@ -23,11 +23,13 @@
 
 ```
 npx vite --port 5188 --strictPort
-node tools/shots/shoot.mjs og        # OG=earth で地球を向いた眺めの案
+node tools/shots/shoot.mjs og        # 既定は 1光日の日の本体視点(OG=saturn / OG=earth で前の案)
 node tools/shots/shoot.mjs fallback
 ```
 
-比較用の案は `og-saturn` / `og-earth`(`.shots/` に出る)。X のカードは、投稿前に Card Validator 相当の確認ができないので、公開後にリンクを貼って見え方を確かめる。
+いまの画像は、1光日に達した日(2026-11-18)のボイジャーを本体の視点で後ろから撮り、左上に軌道の線つきの太陽系、右に機体を置いた構図(2026-11-21 にあめさんが選んだ)。機体は磁力計の竿の先まで画面に収め、ぽっかり浮かぶ感じにする。構図の数値(回り込み・右へのずらし・機体からの距離)は `shoot.mjs` の `CRAFT_FRAME` の既定の値。
+
+比較用の案は `og-craft` / `og-saturn` / `og-earth`(`.shots/` に出る)。X のカードは、投稿前に Card Validator 相当の確認ができないので、公開後にリンクを貼って見え方を確かめる。
 
 ## 3D が使えない端末
 
