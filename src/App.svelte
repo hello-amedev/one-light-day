@@ -1,13 +1,14 @@
 <script lang="ts">
   // 画面の入口。位置と星のデータを読み込み、状態を作り、3D(canvas)とその上の操作の部品を重ねる。
   // 3D の表示(src/stage)が作れなかった時(WebGL が無いなど)は、静止画と案内だけを出す(Fallback)。
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import { etNow, loadEphemeris, type Ephemeris } from './lib/ephemeris';
   import { t } from './lib/i18n';
   import { introMode } from './lib/intro';
   import { appendStars, loadStars, type StarCatalog } from './lib/stars';
   import { createStore, type AppStore } from './lib/store';
-  import { applyUrlState } from './lib/urlState';
+  import { SCENES } from './lib/scenes';
+  import { applyUrlState, parseUrlState, syncSceneUrl } from './lib/urlState';
   import { createStage, type Stage } from './stage';
   import Fallback from './ui/Fallback.svelte';
   import UiLayer from './ui/UiLayer.svelte';
@@ -28,6 +29,7 @@
 
   let frame = 0;
   let stopLoop: (() => void) | undefined;
+  let stopSceneUrl: (() => void) | undefined;
 
   /** 3D が動いていない間に、再生を進める。3D があれば 3D が毎フレーム tick を呼ぶので使わない */
   function startFallbackLoop(s: AppStore) {
@@ -78,14 +80,28 @@
     // 確認用の URL(?t= ?view= ?look=)を当てる。3D を作る前に済ませ、最初の 1 コマから反映する
     applyUrlState(created, location.search);
     // 開いた直後の自動再生。確認用の URL・?intro=0 では始めない。3D を作る前に済ませ、最初の 1 コマから引きの眺めにする
-    const mode = introMode(
-      location.search,
-      typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
-    );
+    const urlScene = parseUrlState(location.search).scene;
+    const mode = urlScene
+      ? 'none'
+      : introMode(
+          location.search,
+          typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
+        );
     if (mode === 'play') created.startIntro();
     else if (mode === 'still') created.skipIntro();
     store = created;
     status = 'ready';
+
+    // 名場面の URL で開いた時は、操作の部品が出来てから名場面の短い文を出す。
+    // 文は「時刻が変わって名場面に着いた時」だけ出るので、直前に少しずらしてから着き直す
+    if (urlScene) {
+      await tick();
+      const scene = SCENES.find((s) => s.id === urlScene)!;
+      created.setTime(scene.et - 60 >= created.minEt ? scene.et - 60 : scene.et + 60);
+      created.jumpScene(urlScene);
+    }
+    // アドレスバーは、名場面へ移った時・離れた時に書き換える
+    stopSceneUrl = syncSceneUrl(created, { location, history });
 
     // canvas と目印の層は status が ready になって描かれた後に取れる
     await Promise.resolve();
@@ -110,6 +126,7 @@
 
   onDestroy(() => {
     stopLoop?.();
+    stopSceneUrl?.();
     stage?.dispose();
   });
 </script>

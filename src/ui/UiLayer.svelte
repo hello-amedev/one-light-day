@@ -7,6 +7,7 @@
   import { t } from '../lib/i18n';
   import type { AppStore } from '../lib/store';
   import type { BodyScreenPoint, StageStats } from '../stage';
+  import AboutPanel from './AboutPanel.svelte';
   import IntroOverlay from './IntroOverlay.svelte';
   import LookButtons from './LookButtons.svelte';
   import PhotoWindow from './PhotoWindow.svelte';
@@ -14,6 +15,7 @@
   import Readout from './Readout.svelte';
   import SceneCaption from './SceneCaption.svelte';
   import Timeline from './Timeline.svelte';
+  import UiButton from './UiButton.svelte';
   import ViewSwitch from './ViewSwitch.svelte';
   import { watchStore } from './store.svelte';
 
@@ -32,6 +34,14 @@
   const com = t().common;
   const txt = t().hud;
   const view = watchStore(store);
+
+  // ── 「このサイトについて」 ──
+  // 開いている間は再生を止める(後ろの 3D は板が受け止めるので操作は通らない)。閉じても再生は戻さない
+  let aboutOpen = $state(false);
+  function openAbout() {
+    store.pause();
+    aboutOpen = true;
+  }
 
   // ── 操作しない間は薄くする ──
   const IDLE_MS = 4000;
@@ -99,6 +109,9 @@
 
   <div class="date">
     <Readout value={formatDate(view.state.et)} sub={formatSinceLaunch(view.state.et)} />
+    <div class="about-entry">
+      <UiButton onclick={openAbout}>{t().about.entry}</UiButton>
+    </div>
   </div>
 
   <div class="readout-area">
@@ -129,6 +142,9 @@
 <PhotoWindow {store} {watchBody} />
 <SceneCaption {store} />
 <IntroOverlay {store} />
+{#if aboutOpen}
+  <AboutPanel onclose={() => (aboutOpen = false)} />
+{/if}
 
 <style>
   .ui {
@@ -182,12 +198,14 @@
   }
   .brand,
   .controls,
-  .timeline {
+  .timeline,
+  .about-entry {
     transition: opacity var(--dur-l) var(--ease-in-out);
   }
   .ui.intro-run .brand,
   .ui.intro-run .controls,
-  .ui.intro-run .timeline {
+  .ui.intro-run .timeline,
+  .ui.intro-run .about-entry {
     opacity: var(--idle-opacity);
   }
   .brand {
@@ -209,6 +227,13 @@
   .date {
     grid-area: date;
     justify-self: end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  /* 文字の右端を日付の右端にそろえる(ボタンの余白ぶん戻す) */
+  .about-entry {
+    margin-right: calc(var(--space-2) * -1);
   }
   .readout-area {
     grid-area: readout;

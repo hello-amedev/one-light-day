@@ -24,6 +24,9 @@
   --color-gold: #d8a84a; /* 線・選択中・刻み */
   --color-earth: #a9cdf0; /* 地球だけに使う淡い青 */
   --color-rule: #273044; /* 罫線 */
+  /* 「このサイトについて」の板。宇宙の地の色を少し透かして、後ろの眺めがうっすら分かるようにする */
+  --panel-bg: color-mix(in srgb, var(--color-space) 90%, transparent);
+  --scrim-bg: color-mix(in srgb, var(--color-space) 55%, transparent);
   /* 文字が星の上で読めるように周りへ落とす影 */
   --text-halo: 0 0 6px var(--color-space), 0 0 2px var(--color-space);
 
