@@ -7,6 +7,7 @@
   import { introMode } from './lib/intro';
   import { appendStars, loadStars, type StarCatalog } from './lib/stars';
   import { createStore, type AppStore } from './lib/store';
+  import { loadDisplayPrefs, saveDisplayPrefs } from './lib/displayPrefs';
   import { SCENES } from './lib/scenes';
   import { applyUrlState, parseUrlState, syncSceneUrl } from './lib/urlState';
   import { createStage, type Stage } from './stage';
@@ -26,6 +27,8 @@
   let idle = $state(false);
   /** 開いた直後の題字が出ている間か。その間は、天体の目印と名前を隠す(題字に重なって読めなくなるため) */
   let titleShown = $state(false);
+  /** 天体の名前と目印を隠すか(メニューの切り替えで消した時と、「星空だけを表示」の間) */
+  let markersHidden = $state(false);
   /** 3D の表示を始められなかった(WebGL が無いなど)。静止画と案内だけを出す */
   let no3d = $state(false);
 
@@ -77,7 +80,7 @@
     }
 
     const maxEt = Math.min(loadedEph.t1, etNow());
-    const created = createStore({ minEt: loadedEph.t0, maxEt, initialEt: maxEt });
+    const created = createStore({ minEt: loadedEph.t0, maxEt, initialEt: maxEt, initialDisplay: loadDisplayPrefs() });
     eph = loadedEph;
     // 確認用の URL(?t= ?view= ?look=)を当てる。3D を作る前に済ませ、最初の 1 コマから反映する
     applyUrlState(created, location.search);
@@ -92,7 +95,17 @@
     if (mode === 'play') created.startIntro();
     else if (mode === 'still') created.skipIntro();
     titleShown = created.get().intro === 'title';
-    created.subscribe((s) => (titleShown = s.intro === 'title'));
+    let savedDisplay = created.get().display;
+    markersHidden = !savedDisplay.labels || created.get().starsOnly;
+    created.subscribe((s) => {
+      titleShown = s.intro === 'title';
+      markersHidden = !s.display.labels || s.starsOnly;
+      // 表示の切り替えは、変わった時だけそのブラウザに覚えておく
+      if (s.display !== savedDisplay) {
+        savedDisplay = s.display;
+        saveDisplayPrefs(s.display);
+      }
+    });
     store = created;
     status = 'ready';
 
@@ -138,7 +151,7 @@
 <main class="app">
   <!-- 重ね順: 3D の canvas → 目印の層(3D の担当が使う) → 操作の部品の層 -->
   <canvas class="stage" bind:this={canvas}></canvas>
-  <div class="markers" class:idle class:hidden-for-title={titleShown} bind:this={overlay}></div>
+  <div class="markers" class:idle class:hidden-for-title={titleShown} class:hidden-by-choice={markersHidden} bind:this={overlay}></div>
 
   {#if no3d}
     <Fallback />
@@ -185,6 +198,10 @@
   .markers.hidden-for-title {
     opacity: 0;
     transition: none;
+  }
+  /* メニューで目印を消した時と「星空だけを表示」の間は、すっと消す */
+  .markers.hidden-by-choice {
+    opacity: 0;
   }
   .message {
     position: absolute;

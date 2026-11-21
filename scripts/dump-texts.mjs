@@ -42,6 +42,7 @@ const PLACES = [
   ['hud.viewGroup', '視点の切り替えの読み上げ（グループ名）'],
   ['hud.viewVoyager', '左上の視点の切り替えのボタン'],
   ['hud.viewOverview', '左上の視点の切り替えのボタン'],
+  ['hud.viewCraft', '左上の視点の切り替えのボタン'],
   ['hud.lookGroup', '向くボタンの読み上げ（グループ名）'],
   ['hud.lookAt', '向くボタン（天体の名前が入る）'],
   ['hud.lookAhead', '向くボタン'],

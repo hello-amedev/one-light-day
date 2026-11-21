@@ -35,6 +35,7 @@
 | hud.viewGroup | 視点 | 視点の切り替えの読み上げ（グループ名） |
 | hud.viewVoyager | ボイジャーの視界 | 左上の視点の切り替えのボタン |
 | hud.viewOverview | 引きの眺め | 左上の視点の切り替えのボタン |
+| hud.viewCraft | ボイジャー本体 | 左上の視点の切り替えのボタン |
 | hud.lookGroup | 向く | 向くボタンの読み上げ（グループ名） |
 | hud.lookAt | 地球を向く | 向くボタン（天体の名前が入る）（例の値：地球） |
 | hud.lookAhead | 進む先を向く | 向くボタン |

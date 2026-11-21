@@ -1,5 +1,5 @@
 <script lang="ts">
-  // 視点の切り替え(ボイジャーの視界 / 引きの眺め)。選択中は金の下線。
+  // 視点の切り替え(ボイジャーの視界 / 引きの眺め / ボイジャー本体)。選択中は金の下線。
   import { t } from '../lib/i18n';
   import type { AppStore, ViewId } from '../lib/store';
   import UiButton from './UiButton.svelte';
@@ -11,6 +11,7 @@
   const options: { id: ViewId; text: string }[] = [
     { id: 'voyager', text: txt.viewVoyager },
     { id: 'overview', text: txt.viewOverview },
+    { id: 'craft', text: txt.viewCraft },
   ];
 </script>
 

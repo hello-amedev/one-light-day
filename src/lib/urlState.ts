@@ -1,6 +1,6 @@
 // 確認用の URL と、名場面ごとの URL を、起動時の状態に当てる。
 //   ?scene=<名場面の ID>                          その名場面から始める(時刻・向く相手・ボイジャーの視界)
-//   ?t=<UTC の ISO 文字列>&view=voyager|overview&look=<天体の ID か ahead>
+//   ?t=<UTC の ISO 文字列>&view=voyager|overview|craft&look=<天体の ID か ahead>&mag=<倍率>
 // scene と t が両方ある時は scene を優先する。値が不正なものは無視する。
 // 名場面へ移った時は、アドレスバーを ?scene=... に書き換える(履歴は増やさない)。
 import { BODY_IDS } from './bodies';
@@ -10,9 +10,11 @@ import type { AppStore } from './store';
 
 export interface UrlState {
   et?: number;
-  view?: 'voyager' | 'overview';
+  view?: 'voyager' | 'overview' | 'craft';
   look?: LookTarget;
   scene?: SceneId;
+  /** ボイジャーの視界の倍率(確認用) */
+  mag?: number;
 }
 
 export function parseUrlState(search: string): UrlState {
@@ -30,10 +32,13 @@ export function parseUrlState(search: string): UrlState {
   }
 
   const view = q.get('view');
-  if (view === 'voyager' || view === 'overview') out.view = view;
+  if (view === 'voyager' || view === 'overview' || view === 'craft') out.view = view;
 
   const look = q.get('look');
   if (look === 'ahead' || (look && (BODY_IDS as readonly string[]).includes(look))) out.look = look as LookTarget;
+
+  const mag = Number(q.get('mag'));
+  if (q.has('mag') && Number.isFinite(mag) && mag > 0) out.mag = mag;
 
   const scene = q.get('scene');
   if (scene && SCENES.some((s) => s.id === scene)) out.scene = scene as SceneId;
@@ -52,6 +57,7 @@ export function applyUrlState(store: AppStore, search: string): void {
   }
   if (s.view) store.setView(s.view);
   if (s.look) store.lookAt(s.look);
+  if (s.mag !== undefined) store.setMagnification(s.mag);
 }
 
 /** 名場面の時刻とみなす近さ(秒)。時間軸のつまみが少しでもずれたら、名場面から離れたものとする */

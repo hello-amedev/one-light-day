@@ -1,5 +1,8 @@
 // 画面全体の状態。Svelte にも three.js にも依存しない素の TypeScript。
 // 画面の部品と 3D の表示は、互いを呼ばずにこの 1 つの状態だけを介してつながる。
+import { DISPLAY_DEFAULTS } from '../displayPrefs';
+import { findEvent, type EventId } from '../events';
+import { CRAFT_DISTANCE_DEFAULT_M, MAG_MIN, clampMagnification, zoomCraftDistance, zoomMagnification } from '../zoom';
 import { INTRO_RUN_SECONDS, INTRO_TITLE_SECONDS, introEt } from '../intro';
 import { SCENES, type LookTarget, type Scene, type SceneId } from '../scenes';
 import { pacedRate } from './pacing';
@@ -29,6 +32,12 @@ export function createStore(options: StoreOptions): AppStore {
     lookTarget: null,
     lookSeq: 0,
     intro: 'off',
+    magnification: MAG_MIN,
+    craftDistance: CRAFT_DISTANCE_DEFAULT_M,
+    display: { ...(options.initialDisplay ?? DISPLAY_DEFAULTS) },
+    starsOnly: false,
+    arrival: null,
+    arrivalSeq: 0,
   };
   /** 自動再生が始まってからの、現実の経過秒 */
   let introElapsed = 0;
@@ -68,7 +77,27 @@ export function createStore(options: StoreOptions): AppStore {
   function jumpScene(id: SceneId): void {
     const scene = SCENES_BY_TIME.find((s) => s.id === id);
     if (!scene) return;
-    commit({ et: clampEt(scene.et), playing: false, ...endIntro(), ...lookPatch(scene.look) });
+    commit({
+      et: clampEt(scene.et),
+      playing: false,
+      ...endIntro(),
+      ...lookPatch(scene.look),
+      arrival: { kind: 'scene', id },
+      arrivalSeq: state.arrivalSeq + 1,
+    });
+  }
+
+  function jumpEvent(id: EventId): void {
+    const event = findEvent(id);
+    if (!event) return;
+    commit({
+      et: clampEt(event.et),
+      playing: false,
+      ...endIntro(),
+      ...(event.look ? lookPatch(event.look) : {}),
+      arrival: { kind: 'event', id },
+      arrivalSeq: state.arrivalSeq + 1,
+    });
   }
 
   return {
@@ -114,7 +143,26 @@ export function createStore(options: StoreOptions): AppStore {
       commit({ ...endIntro(), ...lookPatch(target) });
     },
 
+    zoomBy(factor) {
+      if (!(factor > 0) || !Number.isFinite(factor)) return;
+      if (state.view === 'voyager') commit({ magnification: zoomMagnification(state.magnification, factor) });
+      else if (state.view === 'craft') commit({ craftDistance: zoomCraftDistance(state.craftDistance, factor) });
+    },
+    setMagnification(m) {
+      if (Number.isFinite(m)) commit({ magnification: clampMagnification(m) });
+    },
+    setDisplay(patch) {
+      const next = { ...state.display, ...patch };
+      const d = state.display;
+      if (next.labels === d.labels && next.orbits === d.orbits && next.captions === d.captions) return;
+      commit({ display: next });
+    },
+    setStarsOnly(on) {
+      commit({ starsOnly: on });
+    },
+
     jumpScene,
+    jumpEvent,
     nextScene() {
       const next = SCENES_BY_TIME.find((s) => s.et > state.et + SCENE_MIN_GAP);
       if (next) jumpScene(next.id);

@@ -7,6 +7,8 @@ import type { Ephemeris } from '../lib/ephemeris';
 import type { StarCatalog } from '../lib/stars';
 import type { AppState, AppStore } from '../lib/store';
 import { Bodies } from './bodies';
+import { CraftView } from './craft';
+import { fovFromMagnification } from '../lib/zoom';
 import { basisFromForward, CameraRig, verticalFovDeg } from './camera';
 import type { FrameContext } from './frame';
 import { attachInput } from './input';
@@ -65,7 +67,8 @@ export function createStage(options: StageOptions): Stage {
 
   // 色は CSS の値をそのまま画面に出す(three.js の色の変換を切る)。画素比は 2 まで
   THREE.ColorManagement.enabled = false;
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, depth: false });
+  // 奥行きの判定は本体の視点の機体だけが使う(ほかの素材は depthTest: false で、遠い順の renderOrder で描く)
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, depth: true });
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   renderer.setClearColor(new THREE.Color(theme.space), 1);
 
@@ -96,6 +99,10 @@ export function createStage(options: StageOptions): Stage {
     onLoad: () => invalidate(),
   });
   scene.add(milkyway.object, starfield.object, orbits.group, track.group, guide.group, streaks.group, bodies.group);
+
+  // ── ボイジャー本体 ──(第6段階。中身は craft.ts)
+  const craft = new CraftView({ eph, onChange: () => invalidate() });
+  if (store.get().view === 'craft') craft.activate();
 
   const rig = new CameraRig(eph);
   const initial = store.get();
@@ -144,6 +151,7 @@ export function createStage(options: StageOptions): Stage {
     const now = performance.now();
     if (s.view !== lastView) {
       lastView = s.view;
+      if (s.view === 'craft') craft.activate();
       rig.switchView(!reducedMotion());
     }
     if (s.lookSeq !== lastLookSeq) {
@@ -156,13 +164,20 @@ export function createStage(options: StageOptions): Stage {
   // ── 入力 ──
   const detachInput = attachInput(canvas, {
     drag(dx, dy) {
-      if (store.get().view === 'voyager') rig.dragVoyager(dx, dy, Math.min(width, height));
+      const s = store.get();
+      if (s.view === 'voyager') rig.dragVoyager(dx, dy, Math.min(width, height), fovFromMagnification(s.magnification));
+      else if (s.view === 'craft') craft.drag(dx, dy);
       else rig.dragOverview(dx, dy);
       invalidate();
     },
     zoom(factor) {
-      rig.zoom(factor, store.get().view);
+      // ボイジャーの視界の倍率と本体の視点の距離は状態が持つ(画面に数字を出すため)。引きの眺めは 3D 側が持つ
+      if (store.get().view === 'overview') rig.zoomOverview(factor);
+      else store.zoomBy(factor);
       invalidate();
+    },
+    tap() {
+      if (store.get().starsOnly) store.setStarsOnly(false);
     },
   });
 
@@ -219,7 +234,14 @@ export function createStage(options: StageOptions): Stage {
     chrome += Math.sign(chromeTarget - chrome) * Math.min(Math.abs(chromeTarget - chrome), dt / CHROME_FADE_S);
 
     eph.position('voyager1', 'sun', state.et, voyagerSun);
-    const pose = rig.update(now, state.view, state.et, voyagerSun);
+    const pose = rig.update(
+      now,
+      state.view,
+      state.et,
+      voyagerSun,
+      fovFromMagnification(state.magnification),
+      state.view === 'craft' ? craft.pose(state.et, state.craftDistance) : null,
+    );
 
     const vfov = verticalFovDeg(pose.fov, width / height);
     camera.fov = vfov;
@@ -269,6 +291,7 @@ export function createStage(options: StageOptions): Stage {
     notifyWatchers(infos);
 
     renderer.render(scene, camera);
+    craft.render(renderer, camera, frameCtx, state.view === 'craft');
     if (!milkywayStarted) {
       milkywayStarted = true;
       milkyway.load();
@@ -278,7 +301,7 @@ export function createStage(options: StageOptions): Stage {
     stamps.push(now);
     while (stamps.length > 0 && now - stamps[0] > 1000) stamps.shift();
 
-    if (state.playing || rig.animating || bodies.animating || chrome !== chromeTarget || mwFading) invalidate();
+    if (state.playing || rig.animating || bodies.animating || craft.animating || chrome !== chromeTarget || mwFading) invalidate();
     else {
       lastFrameMs = null;
       prevEt = null;
@@ -325,6 +348,7 @@ export function createStage(options: StageOptions): Stage {
       orbits.dispose();
       track.dispose();
       bodies.dispose();
+      craft.dispose();
       renderer.dispose();
     },
   };

@@ -33,6 +33,11 @@
 |---|---|---|---|
 | 画面全体の状態を作る・読む・変える | `createStore(options)`(Svelte に依存しない)。部品も 3D もこれだけを介してつながる | `src/lib/store/index.ts` | |
 | 部品から状態を反応する値として読む | `watchStore(store).state`(部品の初期化の中で呼ぶ) | `src/ui/store.svelte.ts` | |
+| 倍率(×1 = 短い辺 60 度、上限は狭角カメラの 0.42 度)・視野との換算・画面に出す数・上限の判定・本体の視点の距離の限度 | `fovFromMagnification` / `zoomMagnification` / `displayMagnification` / `atNacLimit` / `CRAFT_DISTANCE_*`。拡大は `store.zoomBy`(視点ごとに倍率か距離へ) | `src/lib/zoom.ts` | |
+| 表示の切り替え(名前と目印・軌道・文)と「星空だけを表示」 | `state.display` / `store.setDisplay` / `state.starsOnly` / `store.setStarsOnly`。ブラウザに覚えるのは `loadDisplayPrefs` / `saveDisplayPrefs`(App.svelte がつなぐ) | `src/lib/store/`・`src/lib/displayPrefs.ts` | |
+| 出来事の一覧(名場面に含める 5 件・単独の刻み 4 件)・通り過ぎた出来事 | `STORY_EVENTS` / `STANDALONE_EVENTS` / `eventsOfScene` / `eventsCrossed`。文は `t().events[id]` | `src/lib/events.ts` | |
+| 名場面・出来事へ移る、移った先を知る | `store.jumpScene` / `store.jumpEvent`、`state.arrival` と `state.arrivalSeq` | `src/lib/store/` | |
+| スイングバイの前後の太陽に対する速さ | `swingbySpeeds(eph, 'jupiter' \| 'saturn')`(前後 30 日) | `src/lib/swingby.ts` | |
 
 ## 画面の部品
 
@@ -66,7 +71,9 @@
 | 3D を作る・止める・計測値を読む・操作しない間に線を薄くする | `createStage` / `Stage.stats` / `Stage.setChromeVisible` / `dispose` | `src/stage/index.ts` |
 | 天体の相対位置を作る(倍精度で `eph.position(天体,'voyager1') − camOffset`) | `relativePosition` | `src/stage/placement.ts` |
 | 球をカメラ中心に縮めて置く(距離 SHELL・半径 r/d×SHELL) | `shellPlacement` / `SHELL` | `src/stage/placement.ts` |
-| 向いた時の向きと視野 | `lookDirection` / `lookFov` | `src/stage/look.ts` |
+| 向いた時の向き(視野は変えない。倍率は状態が持つ) | `lookDirection` | `src/stage/look.ts` |
+| ボイジャー本体の視点(モデルの読み込み・カメラの姿勢・機体を重ねて描く) | `CraftView`(`pose` / `drag` / `activate` / `render`) | `src/stage/craft.ts` |
+| 星空のタップ(クリック)を受ける | `attachInput` の `tap`(「星空だけを表示」から戻す) | `src/stage/input.ts` |
 | カメラの姿勢(視界・引きの眺め・切り替えの補間) | `CameraRig` / `overviewPose` / `blendPose` / `overviewDistance` | `src/stage/camera.ts` |
 | 軌道の楕円を位置と速度から求める | `orbitFromState` / `orbitLoop` | `src/stage/orbit.ts` |
 | 画面の位置・円盤の半径(px) | `projectToScreen` / `screenRadiusPx` | `src/stage/frame.ts` |

@@ -6,6 +6,7 @@ export const hud = {
   viewGroup: '視点',
   viewVoyager: 'ボイジャーの視界',
   viewOverview: '引きの眺め',
+  viewCraft: 'ボイジャー本体',
 
   // ── 向くボタン ──
   lookGroup: '向く',

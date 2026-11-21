@@ -4,7 +4,8 @@ import type { Ephemeris } from '../lib/ephemeris';
 import { AU_KM } from '../lib/ephemeris/types';
 import type { LookTarget } from '../lib/scenes';
 import type { ViewId } from '../lib/store';
-import { FOV_DEFAULT, FOV_MAX, FOV_MIN, lookDirection, lookFov } from './look';
+import { FOV_BASE_DEG } from '../lib/zoom';
+import { lookDirection } from './look';
 import {
   DEG,
   add,
@@ -83,7 +84,10 @@ export function blendPose(from: CameraPose, to: CameraPose, s: number): CameraPo
   let offset: Vec3 = [0, 0, 0];
   if (d0 || d1) {
     const dir = slerp(d0 ?? d1!, d1 ?? d0!, s);
-    const len = Math.exp(lerp(Math.log(Math.max(l0, OFFSET_FLOOR_KM)), Math.log(Math.max(l1, OFFSET_FLOOR_KM)), s));
+    // 下限の長さは、0 でない側の長さの半分を超えない(本体の視点は数十 m のずれなので、1 万 km へ膨らませない)
+    const nonzero = [l0, l1].filter((l) => l > 0);
+    const floor = Math.min(OFFSET_FLOOR_KM, ...nonzero.map((l) => l * 0.5));
+    const len = Math.exp(lerp(Math.log(Math.max(l0, floor)), Math.log(Math.max(l1, floor)), s));
     // 0 の端へ向かう/から出る時は、下限の長さから滑らかに 0 へつなぐ
     let k = 1;
     if (l0 === 0) k *= smoothstep(0, 0.2, s);
@@ -118,11 +122,9 @@ export class CameraRig {
   private eph: Ephemeris;
   /** ボイジャーの視界の向き(単位ベクトル) */
   private dir: Vec3 = [1, 0, 0];
-  private fov = FOV_DEFAULT;
   /** 追っている相手。利用者がドラッグするまで追い続ける */
   private follow: LookTarget | null = 'sun';
   private lookAnim: { startDir: Vec3; startMs: number } | null = null;
-  private fovAnim: { start: number; target: number; startMs: number } | null = null;
 
   private ovAz = OVERVIEW_AZ;
   private ovEl = OVERVIEW_EL;
@@ -137,7 +139,7 @@ export class CameraRig {
 
   /** 動きの途中か(途中の間は毎フレーム描き直す) */
   get animating(): boolean {
-    return this.lookAnim !== null || this.fovAnim !== null || this.trans !== null;
+    return this.lookAnim !== null || this.trans !== null;
   }
 
   /** 視点を切り替えている途中か(縮尺の物差しは、切り替えが終わるまで出さない) */
@@ -153,23 +155,17 @@ export class CameraRig {
   initLook(target: LookTarget | null, et: number): void {
     const t = target ?? 'sun';
     this.follow = t;
-    this.fov = target ? lookFov(t, this.eph, et) : FOV_DEFAULT;
     this.lookAnim = null;
-    this.fovAnim = null;
     lookDirection(t, this.eph, et, this.dir);
   }
 
-  /** 「向く」が押された。animate なら約 0.8 秒で向きと視野を動かす */
+  /** 「向く」が押された。animate なら約 0.8 秒で向きを動かす。視野(倍率)は変えない(第6段階で自動の望遠をやめた) */
   look(target: LookTarget, et: number, nowMs: number, animate: boolean): void {
-    const targetFov = lookFov(target, this.eph, et);
     this.follow = target;
     if (animate) {
       this.lookAnim = { startDir: [...this.dir], startMs: nowMs };
-      this.fovAnim = { start: this.fov, target: targetFov, startMs: nowMs };
     } else {
       this.lookAnim = null;
-      this.fovAnim = null;
-      this.fov = targetFov;
       lookDirection(target, this.eph, et, this.dir);
     }
   }
@@ -183,12 +179,12 @@ export class CameraRig {
     }
   }
 
-  /** ボイジャーの視界でドラッグした。1px あたり 視野 ÷ 短い辺 の角度だけ見回す */
-  dragVoyager(dx: number, dy: number, shortSidePx: number): void {
+  /** ボイジャーの視界でドラッグした。1px あたり 視野 ÷ 短い辺 の角度だけ見回す。fovDeg はいまの短い辺の視野 */
+  dragVoyager(dx: number, dy: number, shortSidePx: number, fovDeg: number): void {
     // 見回し始めたら、追う動きは止める
     this.follow = null;
     this.lookAnim = null;
-    const k = (this.fov * DEG) / shortSidePx;
+    const k = (fovDeg * DEG) / shortSidePx;
     const { az, el } = azElFromDir(this.dir);
     // 星が指に付いてくる向き: 右へ引くと、見ている方向は左(方位は増える)、下へ引くと上を向く
     dirFromAzEl(az + dx * k, clamp(el + dy * k, -EL_LIMIT, EL_LIMIT), this.dir);
@@ -200,23 +196,28 @@ export class CameraRig {
     this.ovEl = clamp(this.ovEl + dy * 0.4 * DEG, OVERVIEW_EL_MIN, OVERVIEW_EL_MAX);
   }
 
-  /** ホイールとピンチ。factor が 1 より大きいと遠ざかる(視野は広く・距離は遠く) */
-  zoom(factor: number, view: ViewId): void {
-    if (view === 'voyager') {
-      this.fovAnim = null;
-      this.fov = clamp(this.fov * factor, FOV_MIN, FOV_MAX);
-    } else {
-      this.ovZoom = clamp(this.ovZoom * factor, ZOOM_MIN, ZOOM_MAX);
-    }
+  /** 引きの眺めのホイールとピンチ。factor が 1 より大きいと遠ざかる。ボイジャーの視界と本体の視点の拡大は状態(store.zoomBy)が持つ */
+  zoomOverview(factor: number): void {
+    this.ovZoom = clamp(this.ovZoom * factor, ZOOM_MIN, ZOOM_MAX);
   }
 
-  /** 今のフレームの姿勢。voyagerFromSun はボイジャーの太陽中心の位置 */
-  update(nowMs: number, view: ViewId, et: number, voyagerFromSun: Vec3): CameraPose {
+  /**
+   * 今のフレームの姿勢。voyagerFromSun はボイジャーの太陽中心の位置。
+   * voyagerFov はボイジャーの視界の短い辺の視野(倍率から。src/lib/zoom.ts)、craftPose は本体の視点の姿勢(本体の視点の時だけ)
+   */
+  update(
+    nowMs: number,
+    view: ViewId,
+    et: number,
+    voyagerFromSun: Vec3,
+    voyagerFov: number = FOV_BASE_DEG,
+    craftPose: CameraPose | null = null,
+  ): CameraPose {
     this.updateVoyager(nowMs, et);
-    const target: CameraPose =
-      view === 'voyager'
-        ? { offset: [0, 0, 0], forward: [...this.dir], fov: this.fov }
-        : overviewPose(voyagerFromSun, this.ovAz, this.ovEl, this.ovZoom);
+    let target: CameraPose;
+    if (view === 'craft' && craftPose) target = craftPose;
+    else if (view === 'overview') target = overviewPose(voyagerFromSun, this.ovAz, this.ovEl, this.ovZoom);
+    else target = { offset: [0, 0, 0], forward: [...this.dir], fov: voyagerFov };
 
     let pose = target;
     if (this.trans) {
@@ -230,15 +231,6 @@ export class CameraRig {
   }
 
   private updateVoyager(nowMs: number, et: number): void {
-    if (this.fovAnim) {
-      const u = (nowMs - this.fovAnim.startMs) / (LOOK_SECONDS * 1000);
-      if (u >= 1) {
-        this.fov = this.fovAnim.target;
-        this.fovAnim = null;
-      } else {
-        this.fov = lerp(this.fovAnim.start, this.fovAnim.target, easeInOut(u));
-      }
-    }
     if (!this.follow) return;
     // 追う相手の向きは毎回引き直す(再生中に相手が画面から逃げない)。向ける途中は始点と今の向きの間を進む
     const goal = lookDirection(this.follow, this.eph, et);

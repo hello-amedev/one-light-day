@@ -1,9 +1,24 @@
 // 画面全体の状態の取り決め。実装は index.ts(担当C)。
 // 画面の部品(Svelte)と 3D の表示(three.js)の両方がこの 1 つの状態を見る。Svelte に依存しない素の TypeScript で作る。
 
+import type { EventId } from '../events';
 import type { LookTarget, SceneId } from '../scenes';
 
-export type ViewId = 'voyager' | 'overview';
+/** 視点。'craft' はボイジャー本体をそばから見る視点(第6段階) */
+export type ViewId = 'voyager' | 'overview' | 'craft';
+
+/** メニューの表示の切り替え。そのブラウザに覚えておく(src/lib/displayPrefs.ts) */
+export interface DisplayPrefs {
+  /** 天体の名前と目印 */
+  labels: boolean;
+  /** 惑星の軌道 */
+  orbits: boolean;
+  /** 名場面と出来事の文 */
+  captions: boolean;
+}
+
+/** 最後に「移った」先(名場面か出来事)。時間軸の刻み・前後の名場面のボタン・名場面の URL で移った時に変わる */
+export type Arrival = { kind: 'scene'; id: SceneId } | { kind: 'event'; id: EventId };
 
 /** 再生の速さ。「1 秒＝◯」の◯ */
 export type RateId = 'hour' | 'day' | 'month' | 'year';
@@ -34,6 +49,19 @@ export interface AppState {
   lookSeq: number;
   /** 開いた直後の自動再生の段階。既存の項目とは独立で、'title' と 'run' の間は playing も true */
   intro: IntroPhase;
+
+  /** ボイジャーの視界の倍率(×1 = 画面の短い辺で 60 度)。利用者のホイール・ピンチだけで変わる。限度は src/lib/zoom.ts */
+  magnification: number;
+  /** ボイジャー本体の視点の、カメラから機体までの距離(m) */
+  craftDistance: number;
+  /** メニューの表示の切り替え */
+  display: DisplayPrefs;
+  /** 「星空だけを表示」。数字と操作・目印・線をすべて隠す。星空をタップ(クリック)すると戻る */
+  starsOnly: boolean;
+  /** 最後に移った先。まだ移っていなければ null */
+  arrival: Arrival | null;
+  /** 移るたびに増える通し番号(同じ所へもう一度移った時も気付けるように) */
+  arrivalSeq: number;
 }
 
 export interface AppStore {
@@ -58,8 +86,21 @@ export interface AppStore {
   setView(view: ViewId): void;
   lookAt(target: LookTarget): void;
 
+  /**
+   * ホイール・ピンチの量を、いまの視点の拡大に当てる。factor が 1 より大きいと遠ざかる。
+   * ボイジャーの視界は倍率、本体の視点は機体からの距離を変える。引きの眺めは 3D 側が自分で持つので何もしない
+   */
+  zoomBy(factor: number): void;
+  /** 倍率を直接決める(確認用の URL・テスト用)。限度に丸める */
+  setMagnification(m: number): void;
+  /** 表示の切り替えの一部を変える */
+  setDisplay(patch: Partial<DisplayPrefs>): void;
+  setStarsOnly(on: boolean): void;
+
   /** 名場面へ移る。その場面の時刻に移し、再生を止め、その場面の look を向く */
   jumpScene(id: SceneId): void;
+  /** 出来事へ移る。その時刻に移し、再生を止める。出来事に look があれば向く */
+  jumpEvent(id: EventId): void;
   nextScene(): void;
   prevScene(): void;
 
@@ -81,4 +122,6 @@ export interface StoreOptions {
   minEt: number;
   maxEt: number;
   initialEt: number;
+  /** 表示の切り替えの初期値(覚えておいた値)。無ければ既定 */
+  initialDisplay?: DisplayPrefs;
 }
