@@ -51,6 +51,8 @@ const groups = [
   { name: 'フォント(woff。古い端末用の控え。ふつうは読まれない)', first: false, match: (r) => /\.woff$/.test(r) },
   { name: '星の深い層 data/stars/stars-deep.bin', first: false, match: (r) => r === 'data/stars/stars-deep.bin' },
   { name: '天体のテクスチャ textures/*(あとから読む)', first: false, match: (r) => r.startsWith('textures/') },
+  { name: 'ボイジャーのモデル models/*(本体の視点を開いた時に読む)', first: false, match: (r) => r.startsWith('models/') },
+  { name: '3D の復号の部品 draco/*(同上)', first: false, match: (r) => r.startsWith('draco/') },
   { name: '写真 photos/*(あとから読む)', first: false, match: (r) => r.startsWith('photos/') },
 ];
 

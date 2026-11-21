@@ -44,3 +44,12 @@ Zen Kaku Gothic New は、サイトで使う文字だけを残した 1 ファイ
 土星・環・タイタンは素材を使わず、プログラムで描いています。
 
 NASA / JPL は、このサイトを推薦・承認していません。
+
+## ボイジャー本体の 3D モデルと圧縮の復号
+
+| 名前 | 使う所 | ライセンス・条件 | 出どころ |
+|---|---|---|---|
+| Voyager Probe (B)(`public/models/voyager.glb`) | 「ボイジャー本体」の視点の 3D モデル | NASA の素材の方針(無料・著作権なし。出典を書く、NASA の推薦に見せない、ロゴは使わない)。モデルにロゴは無い | NASA 3D Resources(https://github.com/nasa/NASA-3D-Resources) |
+| Draco の復号の部品(`public/draco/`) | 上のモデルの圧縮を解く | Apache License 2.0 | https://github.com/google/draco(three.js 同梱の版) |
+
+Draco の部品は Copyright Google Inc. です。ライセンスの全文は https://www.apache.org/licenses/LICENSE-2.0 で読めます。
