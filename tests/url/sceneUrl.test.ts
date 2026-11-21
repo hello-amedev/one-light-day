@@ -96,10 +96,11 @@ describe('アドレスバーの書き換え', () => {
   });
   it('次の名場面・前の名場面でも書き換わる', () => {
     const { store, calls } = setup('');
+    // 木星の後は出来事(イオの火山)に止まる。出来事では scene を外す
     store.setTime(sc('jupiter').et + 100);
-    store.nextScene();
     store.prevScene();
-    expect(calls).toEqual(['/voyager/?scene=saturn', '/voyager/?scene=jupiter']);
+    store.nextScene();
+    expect(calls).toEqual(['/voyager/?scene=jupiter', '/voyager/']);
   });
   it('名場面から名場面へ移る時は 1 回だけ書き換える', () => {
     const { store, calls } = setup('?scene=jupiter');

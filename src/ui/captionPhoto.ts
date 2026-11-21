@@ -26,3 +26,12 @@ export function captionPhotoOf(ref: CaptionRef | null): CaptionPhoto | null {
   if (ref.kind === 'scene' && ref.id === 'pbd') return PHOTOS.pbd;
   return null;
 }
+
+/** 広げて見せる写真(PhotoViewer に渡す形)。src は読み込む URL、alt と credit は辞書の文 */
+export interface ViewerPhoto {
+  src: string;
+  alt: string;
+  credit: string;
+  width: number;
+  height: number;
+}

@@ -174,6 +174,7 @@ export function createStage(options: StageOptions): Stage {
   let lastView = initial.view;
   let lastLookSeq = initial.lookSeq;
   let lastReleaseSeq = initial.lookReleaseSeq;
+  let lastResetSeq = initial.resetSeq;
   const unsubscribe = store.subscribe((s: Readonly<AppState>) => {
     const now = performance.now();
     if (s.view !== lastView) {
@@ -185,6 +186,11 @@ export function createStage(options: StageOptions): Stage {
     if (s.lookSeq !== lastLookSeq) {
       lastLookSeq = s.lookSeq;
       if (s.lookTarget) rig.look(s.lookTarget, s.et, now, s.view === 'voyager' && !reducedMotion());
+    }
+    // 最初からやり直した: カメラの向きを開いた直後に戻す
+    if (s.resetSeq !== lastResetSeq) {
+      lastResetSeq = s.resetSeq;
+      rig.reset(s.et);
     }
     // 名場面の範囲を出て追うのをやめた: 開いた直後と同じく太陽へ、ゆっくり向き直る
     if (s.lookReleaseSeq !== lastReleaseSeq) {

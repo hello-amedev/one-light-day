@@ -186,6 +186,16 @@ export class CameraRig {
     return this.follow;
   }
 
+  /** 最初からやり直す時。引きの眺めの方位・仰角・距離と、ボイジャーの視界の向き(太陽)を開いた直後に戻す。切り替えの動きもやめる */
+  reset(et: number): void {
+    this.ovAz = OVERVIEW_AZ;
+    this.ovEl = OVERVIEW_EL;
+    this.ovZoom = 1;
+    // 視点の切り替えの動きは挟まず、開いた直後の姿勢からすぐ始める
+    this.trans = null;
+    this.initLook(null, et);
+  }
+
   /** 最初の向き(動かさず、すぐ合わせる) */
   initLook(target: LookTarget | null, et: number): void {
     const t = target ?? 'sun';

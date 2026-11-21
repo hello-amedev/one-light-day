@@ -69,6 +69,8 @@ export interface AppState {
   arrival: Arrival | null;
   /** 移るたびに増える通し番号(同じ所へもう一度移った時も気付けるように) */
   arrivalSeq: number;
+  /** 最初からやり直すたびに増える通し番号(3D 側がカメラの向きを開いた直後に戻す合図) */
+  resetSeq: number;
 }
 
 export interface AppStore {
@@ -108,6 +110,7 @@ export interface AppStore {
   jumpScene(id: SceneId): void;
   /** 出来事へ移る。その時刻に移し、再生を止める。出来事に look があれば向く */
   jumpEvent(id: EventId): void;
+  /** 次・前の名場面か出来事へ移る(時間軸の両脇の矢印)。無ければ何もしない */
   nextScene(): void;
   prevScene(): void;
 
@@ -121,6 +124,11 @@ export interface AppStore {
   stopIntro(): void;
   /** 動きを減らす設定の人向け。再生せず、今日の引きの眺めで止めて、案内だけ出せる状態にする */
   skipIntro(): void;
+  /**
+   * 左上の題字から、開いた直後の状態に戻す(時刻・視点・向き・倍率・星空だけを表示・速さ)。表示の切り替えは残す。
+   * still なら再生せず今日の引きの眺めで止める(動きを減らす設定の人向け)。そうでなければ題字から自動再生する
+   */
+  restart(still?: boolean): void;
 
   tick(realDeltaSeconds: number): boolean;
 }

@@ -9,7 +9,8 @@
   // 操作の部品の層の外に置く(薄くならない)。
   import { onDestroy } from 'svelte';
   import PhraseText from './PhraseText.svelte';
-  import { captionPhotoOf } from './captionPhoto';
+  import PhotoViewer from './PhotoViewer.svelte';
+  import { captionPhotoOf, type ViewerPhoto } from './captionPhoto';
   import { photoWindowAvailable } from './photoWindow';
   import type { Ephemeris } from '../lib/ephemeris';
   import { formatSpeed } from '../lib/format';
@@ -73,6 +74,8 @@
   let photoBlocked = $state(false);
   /** 浮かばせる写真を読み込み終えたか(読み込む前の空の枠を見せない) */
   let photoLoaded = $state(false);
+  /** 押して大きく広げている写真。文が消えても、閉じるまで出しておく */
+  let viewer = $state<ViewerPhoto | null>(null);
 
   const first = store.get();
   if (captionsAllowed(first) && first.arrival) {
@@ -161,16 +164,21 @@
 
 {#if photo && !photoBlocked}
   <figure class="photo" class:shown={shown && photoLoaded} class:quick>
-    <img
-      src={photo.src}
-      alt={photo.alt}
-      width={photo.width}
-      height={photo.height}
-      onload={() => (photoLoaded = true)}
-    />
+    <!-- 押すと画面の中央へ大きく広げる(PhotoViewer)。見えている間だけ押せる -->
+    <button type="button" class="open" aria-label={t().photo.expand} title={t().photo.expand} onclick={() => (viewer = photo)}>
+      <img
+        src={photo.src}
+        alt={photo.alt}
+        width={photo.width}
+        height={photo.height}
+        onload={() => (photoLoaded = true)}
+      />
+    </button>
     <figcaption>{photo.credit}</figcaption>
   </figure>
 {/if}
+
+<PhotoViewer photo={viewer} onclose={() => (viewer = null)} />
 
 <style>
   .caption {
@@ -238,6 +246,20 @@
   }
   .photo.quick {
     transition-duration: var(--dur-s);
+  }
+  .photo .open {
+    display: block;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: zoom-in;
+  }
+  .photo.shown .open {
+    pointer-events: auto;
+  }
+  .photo .open:focus-visible {
+    outline: var(--line-thin) solid var(--color-gold);
+    outline-offset: 2px;
   }
   .photo img {
     display: block;

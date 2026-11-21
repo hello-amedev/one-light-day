@@ -3,7 +3,7 @@
   // 層全体は pointer-events: none で、部品だけが auto。星空の上の操作は 3D 側へ通る。
   import { onDestroy, onMount } from 'svelte';
   import type { Ephemeris } from '../lib/ephemeris';
-  import { formatDate, formatDistance, formatLightTime, formatSinceLaunch } from '../lib/format';
+  import { formatDistance, formatLightTime } from '../lib/format';
   import { SCENES } from '../lib/scenes';
   import { t } from '../lib/i18n';
   import type { AppStore } from '../lib/store';
@@ -14,6 +14,7 @@
   import MainMenu from './MainMenu.svelte';
   import PhotoWindow from './PhotoWindow.svelte';
   import PlayControls from './PlayControls.svelte';
+  import DateJump from './DateJump.svelte';
   import Readout from './Readout.svelte';
   import ReadoutExtra from './ReadoutExtra.svelte';
   import SceneCaption from './SceneCaption.svelte';
@@ -55,7 +56,21 @@
   onMount(() => {
     if (openParam === 'stars') store.setStarsOnly(true);
   });
-  const popOpen = $derived(menuOpen || lookOpen);
+  // ── 左上の題字: 開いた直後の状態に戻して、打ち上げから自動再生し直す(ページは読み込み直さない) ──
+  function restart(e: MouseEvent) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // 新しいタブで開く操作はそのまま通す
+    e.preventDefault();
+    menuOpen = false;
+    lookOpen = false;
+    // 名場面や確認用の項目(?scene= など)をアドレスバーから外す
+    history.replaceState(null, '', location.pathname);
+    const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    store.restart(still);
+  }
+
+  /** 右上の日付を入力している間 */
+  let dateEditing = $state(false);
+  const popOpen = $derived(menuOpen || lookOpen || dateEditing);
 
   // ── 星空だけを表示 ──
   // 数字と操作をすべて隠す(戻るのは 3D 側の星空のタップ、または Esc)。入った時に戻し方を数秒だけ案内する
@@ -149,13 +164,15 @@
   class:stars-only={starsOnly}
 >
   <header class="brand">
-    <h1 class="title">{com.title}</h1>
+    <h1 class="title">
+      <a href={import.meta.env.BASE_URL} class="home" title={com.restart} onclick={restart}>{com.title}</a>
+    </h1>
     <ViewSwitch {store} />
   </header>
 
   <div class="top">
     <div class="date">
-      <Readout value={formatDate(view.state.et)} sub={formatSinceLaunch(view.state.et)} />
+      <DateJump {store} bind:editing={dateEditing} />
     </div>
     <div class="menu">
       <MainMenu {store} onabout={openAbout} bind:open={menuOpen} />
@@ -300,6 +317,18 @@
     text-shadow: var(--text-halo);
     /* 題字は 1 行のまま(スマホの縦画面で右上のメニューのアイコンが増え、幅が足りず折れていた) */
     white-space: nowrap;
+  }
+  .home {
+    color: inherit;
+    text-decoration: none;
+    pointer-events: auto;
+  }
+  .home:hover {
+    color: var(--color-gold);
+  }
+  .home:focus-visible {
+    outline: var(--line-thin) solid var(--color-gold);
+    outline-offset: var(--space-1);
   }
   /* 右上: 日付と、その右のメニューのアイコン */
   .top {

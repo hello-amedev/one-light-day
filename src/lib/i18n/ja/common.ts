@@ -4,6 +4,8 @@ export const common = {
   title: 'VOYAGER 1',
   /** 名前を並べる区切り。直接使わず i18n の joinList を使う */
   listSeparator: '、',
+  /** 左上の題字(押すと開いた直後の状態に戻り、打ち上げから自動再生し直す)の指した時の名前 */
+  restart: '最初から再生',
   /** 改行してよい所の記号（この記号の直後で改行する）。直接使わず PhraseText を使う */
   phraseBreaks: '。、 ',
   loading: '位置のデータを読み込んでいます',

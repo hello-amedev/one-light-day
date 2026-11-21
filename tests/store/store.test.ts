@@ -107,15 +107,30 @@ describe('名場面', () => {
     expect(st.lookTarget).toBe('jupiter');
     expect(st.lookSeq).toBe(seq + 1);
   });
-  it('nextScene / prevScene は前後の場面へ。無ければ何もしない', () => {
+  it('nextScene / prevScene は前後の名場面か出来事へ(名場面に含まれる出来事にも止まる)。無ければ何もしない', () => {
     const s = make(MIN);
     s.prevScene();
     expect(s.get().et).toBe(MIN);
+    const arrived = () => s.get().arrival;
     s.nextScene();
+    expect(arrived()).toEqual({ kind: 'event', id: 'earthMoonPhoto' });
+    s.nextScene();
+    expect(arrived()).toEqual({ kind: 'event', id: 'jupiterRing' });
+    s.nextScene();
+    expect(arrived()).toEqual({ kind: 'scene', id: 'jupiter' });
     expect(s.get().et).toBe(sc('jupiter').et);
+    s.nextScene();
+    expect(arrived()).toEqual({ kind: 'event', id: 'ioVolcano' });
+    s.nextScene();
+    expect(arrived()).toEqual({ kind: 'event', id: 'titanFlyby' });
     s.nextScene();
     expect(s.get().et).toBe(sc('saturn').et);
     s.prevScene();
+    expect(arrived()).toEqual({ kind: 'event', id: 'titanFlyby' });
+    s.jumpScene('jupiter');
+    s.prevScene();
+    expect(arrived()).toEqual({ kind: 'event', id: 'jupiterRing' });
+    s.jumpScene('jupiter');
     expect(s.get().et).toBe(sc('jupiter').et);
     s.setTime(MAX);
     s.nextScene();
@@ -326,5 +341,40 @@ describe('名場面から移った後の向き', () => {
     s.lookAt('saturn');
     s.setTime(MAX);
     expect(s.get().lookTarget).toBe('saturn');
+  });
+});
+
+describe('最初からやり直す(左上の題字)', () => {
+  it('開いた直後の状態に戻して題字から自動再生する。表示の切り替えは残す', () => {
+    const s = make(MIN);
+    s.jumpScene('saturn');
+    s.setView('craft');
+    s.zoomBy(0.5);
+    s.setStarsOnly(true);
+    s.setRate('year');
+    s.setDisplay({ orbits: false });
+    const seq = s.get().resetSeq;
+    s.restart();
+    const st = s.get();
+    expect(st.et).toBe(MIN);
+    expect(st.playing).toBe(true);
+    expect(st.intro).toBe('title');
+    expect(st.view).toBe('overview');
+    expect(st.lookTarget).toBeNull();
+    expect(st.lookHold).toBeNull();
+    expect(st.starsOnly).toBe(false);
+    expect(st.rate).toBe('day');
+    expect(st.arrival).toBeNull();
+    expect(st.display.orbits).toBe(false);
+    expect(st.resetSeq).toBe(seq + 1);
+  });
+  it('still なら再生せず、今日の引きの眺めで止める', () => {
+    const s = make(MIN);
+    s.jumpScene('saturn');
+    s.restart(true);
+    expect(s.get().et).toBe(MAX);
+    expect(s.get().playing).toBe(false);
+    expect(s.get().intro).toBe('done');
+    expect(s.get().view).toBe('overview');
   });
 });

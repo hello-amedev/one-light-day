@@ -1,7 +1,7 @@
 // 画面全体の状態。Svelte にも three.js にも依存しない素の TypeScript。
 // 画面の部品と 3D の表示は、互いを呼ばずにこの 1 つの状態だけを介してつながる。
 import { DISPLAY_DEFAULTS } from '../displayPrefs';
-import { findEvent, type EventId } from '../events';
+import { findEvent, STORY_EVENTS, type EventId } from '../events';
 import { CRAFT_DISTANCE_DEFAULT_M, MAG_MIN, clampMagnification, zoomCraftDistance, zoomMagnification } from '../zoom';
 import { INTRO_RUN_SECONDS, INTRO_TITLE_SECONDS, introEt } from '../intro';
 import { SCENES, type LookTarget, type Scene, type SceneId } from '../scenes';
@@ -19,6 +19,11 @@ const SCENE_MIN_GAP = 1;
 /** 名場面に属さない出来事から移った時に、向きを保つ前後の秒数 */
 const DEFAULT_HOLD_SECONDS = 10 * 86400;
 const SCENES_BY_TIME: readonly Scene[] = [...SCENES].sort((a, b) => a.et - b.et);
+/** 時間軸の両脇の矢印(＜＞)で止まる所。名場面と出来事(名場面に含まれるものも)を時刻の順に並べる */
+const STOPS: readonly ({ kind: 'scene'; id: SceneId; et: number } | { kind: 'event'; id: EventId; et: number })[] = [
+  ...SCENES.map((s) => ({ kind: 'scene' as const, id: s.id, et: s.et })),
+  ...STORY_EVENTS.map((e) => ({ kind: 'event' as const, id: e.id, et: e.et })),
+].sort((a, b) => a.et - b.et);
 
 export function createStore(options: StoreOptions): AppStore {
   const { minEt, maxEt } = options;
@@ -42,6 +47,7 @@ export function createStore(options: StoreOptions): AppStore {
     starsOnly: false,
     arrival: null,
     arrivalSeq: 0,
+    resetSeq: 0,
   };
   /** 自動再生が始まってからの、現実の経過秒 */
   let introElapsed = 0;
@@ -186,12 +192,14 @@ export function createStore(options: StoreOptions): AppStore {
     jumpScene,
     jumpEvent,
     nextScene() {
-      const next = SCENES_BY_TIME.find((s) => s.et > state.et + SCENE_MIN_GAP);
-      if (next) jumpScene(next.id);
+      const next = STOPS.find((s) => s.et > state.et + SCENE_MIN_GAP);
+      if (next?.kind === 'scene') jumpScene(next.id);
+      else if (next) jumpEvent(next.id);
     },
     prevScene() {
-      const prev = [...SCENES_BY_TIME].reverse().find((s) => s.et < state.et - SCENE_MIN_GAP);
-      if (prev) jumpScene(prev.id);
+      const prev = [...STOPS].reverse().find((s) => s.et < state.et - SCENE_MIN_GAP);
+      if (prev?.kind === 'scene') jumpScene(prev.id);
+      else if (prev) jumpEvent(prev.id);
     },
 
     startIntro() {
@@ -204,6 +212,21 @@ export function createStore(options: StoreOptions): AppStore {
     },
     skipIntro() {
       commit({ et: maxEt, view: 'overview', playing: false, intro: 'done' });
+    },
+    restart(still = false) {
+      introElapsed = 0;
+      commit({
+        ...(still ? { et: maxEt, playing: false, intro: 'done' as const } : { et: minEt, playing: true, intro: 'title' as const }),
+        view: 'overview',
+        rate: 'day',
+        lookTarget: null,
+        lookHold: null,
+        magnification: MAG_MIN,
+        craftDistance: CRAFT_DISTANCE_DEFAULT_M,
+        starsOnly: false,
+        arrival: null,
+        resetSeq: state.resetSeq + 1,
+      });
     },
 
     tick(realDeltaSeconds) {

@@ -71,3 +71,14 @@
 19. https://www.nasa.gov/news-release/nasas-voyager-1-makes-history-reaching-one-light-day-from-earth/
 20. https://science.nasa.gov/resource/voyager-one-light-day-downloads/
 21. https://ntrs.nasa.gov/citations/19820036881
+
+## 2026-11-22 の調べ: 1光日の報じられ方
+
+名場面「地球から1光日」の文を書き直す時に、NASA と国内外の報道の言い方を調べた(担当のサブエージェント。NASA の 3 ページは原文、ほかは要約を通した読み)。
+
+- NASA: 「A light-day is the distance light travels in 24 hours」。管理者の言い方は「信号は機体まで 24 時間、こちらへ戻るのに 24 時間」。解説のページは「no other human-made object」が達していない距離とする
+- 国内: NHK「光の速さで24時間かかる「1光日」」、毎日「光でも丸1日かかる遠さ」、sorae「光で丸1日かかる距離」、アストロアーツ「交信には片道24時間、往復で2日かかる」、CNN.co.jp「交信に往復2日」
+- 多く使われた説明は「光の速さで 1 日(24 時間)」と「片道 1 日・往復 2 日」の 2 つ。画面の文はこの 2 つで書いた
+- 2026-11-14 から科学・工学のデータは届かず、搬送波だけを受けている。NASA は搬送波と軌道の計算で 1 光日を確かめた。画面の文は扱っていない
+
+出典: https://www.nasa.gov/news-release/nasas-voyager-1-makes-history-reaching-one-light-day-from-earth/ 、https://science.nasa.gov/mission/voyager/voyager-1/voyager-1-what-is-a-light-day/ 、https://svs.gsfc.nasa.gov/15120 、https://www.astroarts.co.jp/article/hl/a/14777_voyager1 、https://sorae.info/space/20261117-voyager-1-one-light-day.html

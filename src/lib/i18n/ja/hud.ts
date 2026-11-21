@@ -38,10 +38,17 @@ export const hud = {
   // ── 数字 ──
   fromEarth: '地球から',
   fromSun: '太陽から',
+  // ── 右上の日付の入力(日付を押すと入力欄になる) ──
+  /** 日付のボタン(指した時の名前) */
+  dateEdit: '日付を入力',
+  /** 入力欄の読み上げ */
+  dateInput: '日付（年.月.日）',
+  /** 読めない形や範囲の外の日付を打った時。from / to は 1977.09.05 の形の日付 */
+  dateRange: (from: string, to: string) => `${from}〜${to}の日付を入力してください`,
   /** 打ち上げからの日数。days は桁区切り済みの文字 */
   sinceLaunch: (days: string) => `打ち上げから${days}日`,
   /** 光が届くまでの時間。duration は下の duration* で作った文字 */
-  lightTime: (duration: string) => `光で${duration}`,
+  lightTime: (duration: string) => `光の速さで${duration}`,
   durationHM: (h: string, m: string) => `${h}時間${m}分`,
   durationHMS: (h: string, m: string, s: string) => `${h}時間${m}分${s}秒`,
   durationMS: (m: string, s: string) => `${m}分${s}秒`,

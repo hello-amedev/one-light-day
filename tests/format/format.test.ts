@@ -50,7 +50,7 @@ describe('光の時間', () => {
     expect(formatLightDuration(86400, true)).toBe('24時間0分0秒');
     expect(formatLightDuration(36 * 60 + 12)).toBe('36分12秒');
     expect(formatLightDuration(8.3)).toBe('8.3秒');
-    expect(formatLightTime(299_792.458 * (5 * 3600 + 36 * 60))).toBe('光で5時間36分');
-    expect(formatLightTime(299_792.458 * 86400, true)).toBe('光で24時間0分0秒');
+    expect(formatLightTime(299_792.458 * (5 * 3600 + 36 * 60))).toBe('光の速さで5時間36分');
+    expect(formatLightTime(299_792.458 * 86400, true)).toBe('光の速さで24時間0分0秒');
   });
 });
