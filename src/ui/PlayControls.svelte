@@ -1,59 +1,48 @@
 <script lang="ts">
-  // 再生 / 停止、再生の速さ 4 段、送りダイヤル(1日・1時間)。
+  // 時間軸の左に置く操作。再生 / 停止、速さ(押すたびに 1時間 → 1日 → 1か月 → 1年)、送り(‹ ›)。
   import { t } from '../lib/i18n';
-  import { RATE_SECONDS, type AppStore, type RateId } from '../lib/store';
-  import UiButton from './UiButton.svelte';
+  import type { AppStore } from '../lib/store';
+  import { nextRate, stepSeconds, stepUnit } from './controls';
+  import Icon from './Icon.svelte';
   import StepDial from './StepDial.svelte';
+  import UiButton from './UiButton.svelte';
   import { watchStore } from './store.svelte';
 
   let { store }: { store: AppStore } = $props();
   const txt = t().hud;
   const view = watchStore(store);
-  const rateIds = Object.keys(RATE_SECONDS) as RateId[];
+  const playText = $derived(view.state.playing ? txt.pause : txt.play);
+  const unit = $derived(stepUnit(view.state.rate));
 </script>
 
 <div class="play" role="group" aria-label={txt.playGroup}>
-  <UiButton pressed={view.state.playing} onclick={() => store.toggle()}>
-    {view.state.playing ? txt.pause : txt.play}
+  <UiButton icon label={playText} tip={playText} tipPlace="above" tipAlign="start" onclick={() => store.toggle()}>
+    <Icon name={view.state.playing ? 'pause' : 'play'} />
   </UiButton>
-  <div class="rates">
-    {#each rateIds as id (id)}
-      <UiButton pressed={view.state.rate === id} onclick={() => store.setRate(id)}>{txt.rates[id]}</UiButton>
-    {/each}
-  </div>
-</div>
-
-<div class="dials" role="group" aria-label={txt.stepGroup}>
+  <UiButton
+    label={txt.rateButton(txt.rates[view.state.rate])}
+    tip={txt.rateName}
+    tipPlace="above"
+    onclick={() => store.setRate(nextRate(view.state.rate))}
+  >
+    <span class="rate">{txt.rates[view.state.rate]}</span>
+  </UiButton>
   <StepDial
-    text={txt.stepDay}
-    backLabel={txt.stepBackDay}
-    forwardLabel={txt.stepForwardDay}
-    onstep={(d) => store.stepTime(d * 86400)}
-  />
-  <StepDial
-    text={txt.stepHour}
-    backLabel={txt.stepBackHour}
-    forwardLabel={txt.stepForwardHour}
-    onstep={(d) => store.stepTime(d * 3600)}
+    backLabel={unit === 'hour' ? txt.stepBackHour : txt.stepBackDay}
+    forwardLabel={unit === 'hour' ? txt.stepForwardHour : txt.stepForwardDay}
+    onstep={(d) => store.stepTime(d * stepSeconds(view.state.rate))}
   />
 </div>
 
 <style>
   .play {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    margin-left: calc(var(--space-2) * -1);
   }
-  .rates {
-    display: flex;
-    flex-wrap: wrap;
-  }
-  .dials {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    column-gap: var(--space-3);
-    margin-left: calc(var(--space-2) * -1);
+  /* 速さの文字が変わってもボタンの幅が動かない(最長は「1秒＝1か月」) */
+  .rate {
+    display: inline-block;
+    min-width: 6em;
+    text-align: center;
   }
 </style>

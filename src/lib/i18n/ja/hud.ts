@@ -18,6 +18,10 @@ export const hud = {
   playGroup: '再生',
   play: '再生',
   pause: '停止',
+  /** 速さのボタンの名前(指した時)。押すたびに 1時間 → 1日 → 1か月 → 1年 と切り替わる */
+  rateName: '再生の速さ',
+  /** 速さのボタンの読み上げ。speed は下の rates の文 */
+  rateButton: (speed: string) => `再生の速さ：${speed}`,
   rates: {
     hour: '1秒＝1時間',
     day: '1秒＝1日',
@@ -26,9 +30,6 @@ export const hud = {
   } satisfies Record<RateId, string>,
 
   // ── 送りダイヤル ──
-  stepGroup: '送り',
-  stepDay: '1日',
-  stepHour: '1時間',
   stepBackDay: '1日戻す',
   stepForwardDay: '1日進める',
   stepBackHour: '1時間戻す',
@@ -49,6 +50,15 @@ export const hud = {
   distanceOku: (value: string) => `${value}億km`,
   distanceMan: (value: string) => `${value}万km`,
   distanceKm: (value: string) => `${value}km`,
+
+  // ── 右下の距離の上の小さな表示 ──
+  /** ボイジャーの視界の倍率。value は 1 や 12 のような数の文字 */
+  magnification: (value: string) => `×${value}`,
+  magnificationAria: (value: string) => `${value}倍に拡大`,
+  /** 倍率が上限(狭角カメラの視野)に達した時 */
+  magnificationLimit: 'ボイジャーの狭角カメラと同じ視野',
+  /** ボイジャー本体の視点の、カメラから機体までの距離。meters は整数の文字 */
+  craftDistance: (meters: string) => `機体から${meters}m`,
 
   // ── 引きの眺めの縮尺の物差し ──
   /** 物差しの読み上げ。length は「10億km」のような長さ */

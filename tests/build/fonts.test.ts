@@ -22,7 +22,8 @@ describe('絞った日本語フォント', () => {
     for (const ch of '光日時間分地球向') expect(site.has(ch.codePointAt(0)!) ? have.has(ch.codePointAt(0)!) : true, ch).toBe(true);
   });
 
-  it('1 ファイル 60KB 以内', () => {
-    expect(fs.statSync(SUBSET_FILE).size).toBeLessThanOrEqual(60 * 1024);
+  // 第6段階で出来事の文が増え、約 61KB になったので 80KB に上げた(最初に読む量の目標 2MB に比べて小さい)。絞り忘れを見つけるための上限
+  it('1 ファイル 80KB 以内', () => {
+    expect(fs.statSync(SUBSET_FILE).size).toBeLessThanOrEqual(80 * 1024);
   });
 });
