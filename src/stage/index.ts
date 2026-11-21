@@ -12,7 +12,9 @@ import type { FrameContext } from './frame';
 import { attachInput } from './input';
 import { OrbitLines, TrackLines } from './lines';
 import { MarkerLayer } from './markers';
+import { createMilkyway, pickMilkywayVariant } from './milkyway';
 import { DEG, add, type Vec3 } from './math';
+import type { BodyId } from '../lib/bodies';
 import { createStarfield } from './starfield';
 import { readTheme } from './theme';
 
@@ -34,10 +36,19 @@ export interface StageStats {
   idle: boolean;
 }
 
+export interface BodyScreenPoint {
+  x: number;
+  y: number;
+  /** 画面の中にあるか(カメラの後ろ・画面の外なら false) */
+  visible: boolean;
+}
+
 export interface Stage {
   stats(): StageStats;
   /** 操作しない間に文字や目盛りと一緒に軌道の線を薄くする。false で薄くする */
   setChromeVisible(visible: boolean): void;
+  /** 天体の目印の画面の位置(CSS px)を、描くたびに位置が変わった時だけ知らせる。戻り値を呼ぶと解除 */
+  watchBody(body: BodyId, listener: (p: BodyScreenPoint) => void): () => void;
   dispose(): void;
 }
 
@@ -61,8 +72,19 @@ export function createStage(options: StageOptions): Stage {
   const orbits = new OrbitLines(eph, theme);
   const track = new TrackLines(eph, theme);
   const bodies = new Bodies(eph, theme);
-  const markers = new MarkerLayer(overlay);
-  scene.add(starfield.object, orbits.group, track.group, bodies.group);
+  const markers = new MarkerLayer(overlay, eph);
+  // 天の川は最初のコマを描いた後に読み込む(星空が先に出る)
+  const milkyway = createMilkyway({
+    baseUrl: import.meta.env.BASE_URL + 'textures/',
+    variant: pickMilkywayVariant(
+      Math.min(window.innerWidth, window.innerHeight),
+      Math.min(window.devicePixelRatio || 1, 2),
+      typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches,
+    ),
+    gain: theme.milkywayGain,
+    onLoad: () => invalidate(),
+  });
+  scene.add(milkyway.object, starfield.object, orbits.group, track.group, bodies.group);
 
   const rig = new CameraRig(eph);
   const initial = store.get();
@@ -143,6 +165,21 @@ export function createStage(options: StageOptions): Stage {
   canvas.addEventListener('webglcontextlost', onLost);
   canvas.addEventListener('webglcontextrestored', onRestored);
 
+  // ── 目印の位置を外へ伝える口 ──
+  const watchers: { body: BodyId; listener: (p: BodyScreenPoint) => void; last: BodyScreenPoint | null }[] = [];
+  function notifyWatchers(infos: { id: BodyId; screen: { x: number; y: number } | null }[]): void {
+    for (const w of watchers) {
+      const s = infos.find((i) => i.id === w.body)?.screen ?? null;
+      const inside = !!s && s.x >= 0 && s.y >= 0 && s.x <= width && s.y <= height;
+      const next: BodyScreenPoint = { x: s ? Math.round(s.x * 2) / 2 : 0, y: s ? Math.round(s.y * 2) / 2 : 0, visible: inside };
+      const p = w.last;
+      if (p && p.visible === next.visible && (!next.visible || (p.x === next.x && p.y === next.y))) continue;
+      w.last = next;
+      w.listener(next);
+    }
+  }
+  let milkywayStarted = false;
+
   // ── 1 コマ ──
   const voyagerSun: Vec3 = [0, 0, 0];
   const frameCtx: FrameContext = {
@@ -203,14 +240,20 @@ export function createStage(options: StageOptions): Stage {
     orbits.update(frameCtx, cameraSun, chrome);
     track.update(frameCtx, cameraSun);
     markers.update(infos, frameCtx, state.lookTarget);
+    const mwFading = milkyway.update(now, vfov);
+    notifyWatchers(infos);
 
     renderer.render(scene, camera);
+    if (!milkywayStarted) {
+      milkywayStarted = true;
+      milkyway.load();
+    }
 
     frames++;
     stamps.push(now);
     while (stamps.length > 0 && now - stamps[0] > 1000) stamps.shift();
 
-    if (state.playing || rig.animating || chrome !== chromeTarget) invalidate();
+    if (state.playing || rig.animating || chrome !== chromeTarget || mwFading) invalidate();
     else lastFrameMs = null;
   }
 
@@ -227,6 +270,16 @@ export function createStage(options: StageOptions): Stage {
       chromeTarget = visible ? 1 : 0;
       invalidate();
     },
+    watchBody(body, listener) {
+      const w = { body, listener, last: null as BodyScreenPoint | null };
+      watchers.push(w);
+      // 止まっている間は描かないので、登録した時に 1 コマ予約して最初の位置を受け取る
+      invalidate();
+      return () => {
+        const i = watchers.indexOf(w);
+        if (i >= 0) watchers.splice(i, 1);
+      };
+    },
     dispose() {
       disposed = true;
       cancelAnimationFrame(rafId);
@@ -237,6 +290,7 @@ export function createStage(options: StageOptions): Stage {
       canvas.removeEventListener('webglcontextrestored', onRestored);
       markers.dispose();
       starfield.dispose();
+      milkyway.dispose();
       orbits.dispose();
       track.dispose();
       bodies.dispose();

@@ -6,10 +6,12 @@
   import { formatDate, formatDistance, formatLightTime, formatSinceLaunch } from '../lib/format';
   import { t } from '../lib/i18n';
   import type { AppStore } from '../lib/store';
-  import type { StageStats } from '../stage';
+  import type { BodyScreenPoint, StageStats } from '../stage';
   import LookButtons from './LookButtons.svelte';
+  import PhotoWindow from './PhotoWindow.svelte';
   import PlayControls from './PlayControls.svelte';
   import Readout from './Readout.svelte';
+  import SceneCaption from './SceneCaption.svelte';
   import Timeline from './Timeline.svelte';
   import ViewSwitch from './ViewSwitch.svelte';
   import { watchStore } from './store.svelte';
@@ -21,8 +23,10 @@
     stats?: () => StageStats;
     /** 操作しない間に入った/戻った時に呼ぶ(目印の層と 3D の線を一緒に薄くするため) */
     onIdleChange?: (idle: boolean) => void;
+    /** 天体の目印の画面の位置を 3D から受け取る口(写真の窓の線に使う)。3D が無い時は渡さない */
+    watchBody?: (body: 'earth', listener: (p: BodyScreenPoint) => void) => () => void;
   }
-  let { store, eph, stats, onIdleChange }: Props = $props();
+  let { store, eph, stats, onIdleChange, watchBody }: Props = $props();
 
   const com = t().common;
   const txt = t().hud;
@@ -104,6 +108,10 @@
     <div class="debug">{statsText}</div>
   {/if}
 </div>
+
+<!-- 見せたい中身なので、操作しない間に薄くなる層(.ui)の外に置く -->
+<PhotoWindow {store} {watchBody} />
+<SceneCaption {store} />
 
 <style>
   .ui {

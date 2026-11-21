@@ -47,6 +47,8 @@
 | 再生・速さ・送りダイヤル | `PlayControls` | `src/ui/PlayControls.svelte` |
 | 時間軸(目盛り・名場面の刻み・つまみ・前後の名場面) | `Timeline` | `src/ui/Timeline.svelte` |
 | 操作の部品の層全体(配置・操作しない間に薄くする・?debug の計測値) | `UiLayer` | `src/ui/UiLayer.svelte` |
+| 写真の窓(開く条件 `photoWindowAvailable`・置き場所 `placePhotoWindow`) | `PhotoWindow` | `src/ui/PhotoWindow.svelte`・`src/ui/photoWindow.ts` |
+| 名場面に着いた時の短い文(条件 `sceneJumpedTo`) | `SceneCaption` | `src/ui/SceneCaption.svelte`・`src/ui/sceneCaption.ts` |
 | 開発用の代用データ(本番ビルドに入れない) | `createMockEphemeris` / `createMockStars` | `src/ui/dev/mockData.ts` |
 
 重ね方: canvas(3D)→ 目印の層(3D の担当が使う)→ 操作の部品の層(`.ui` は `pointer-events: none`、部品だけ `auto`)。
@@ -63,7 +65,9 @@
 | 軌道の楕円を位置と速度から求める | `orbitFromState` / `orbitLoop` | `src/stage/orbit.ts` |
 | 画面の位置・円盤の半径(px) | `projectToScreen` / `screenRadiusPx` | `src/stage/frame.ts` |
 | ベクトル・方位仰角・球面補間・加減速 | `math.ts` の関数 | `src/stage/math.ts` |
-| 目印と名前(DOM)・重なりの間引き | `MarkerLayer` | `src/stage/markers.ts` |
+| 目印と名前(DOM)・重なりの間引き・名前を出す側(`placeLabel`)・優先度(`priorityOf`) | `MarkerLayer` | `src/stage/markers.ts` |
+| 背景の天の川(向きの式 `skyUV`・画像の選び方・淡さ) | `createMilkyway` | `src/stage/milkyway.ts` |
+| 天体の目印の画面の位置を 3D から受け取る | `Stage.watchBody(body, listener)` | `src/stage/index.ts` |
 | 確認用の URL(?t= ?view= ?look=)を状態に当てる | `applyUrlState` / `parseUrlState` | `src/lib/urlState.ts` |
 
 注意: 天体の位置を太陽中心どうしの引き算で作らない(通過の距離がずれる)。球は奥行きの判定を使わず、遠い順の `renderOrder` で描く。

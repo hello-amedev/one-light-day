@@ -11,6 +11,8 @@ export interface Theme {
   sunGlare: number;
   /** 軌道の線の濃さの倍率 */
   orbitOpacity: number;
+  /** 天の川の明るさの倍率 */
+  milkywayGain: number;
 }
 
 /** 読めなかった時(テストなど)の値。app.css の第 1 段階の値と同じ */
@@ -23,6 +25,7 @@ const FALLBACK: Theme = {
   starGain: 1,
   sunGlare: 1.3,
   orbitOpacity: 1,
+  milkywayGain: 1,
 };
 
 export function readTheme(): Theme {
@@ -42,5 +45,6 @@ export function readTheme(): Theme {
     starGain: num('--star-gain', FALLBACK.starGain),
     sunGlare: num('--sun-glare', FALLBACK.sunGlare),
     orbitOpacity: num('--orbit-opacity', FALLBACK.orbitOpacity),
+    milkywayGain: num('--milkyway-gain', FALLBACK.milkywayGain),
   };
 }

@@ -111,6 +111,7 @@
       {eph}
       stats={stage ? () => stage!.stats() : undefined}
       onIdleChange={(v) => (idle = v)}
+      watchBody={stage ? (b, l) => stage!.watchBody(b, l) : undefined}
     />
   {:else}
     <p class="message" role="status">{status === 'failed' ? com.loadFailed : com.loading}</p>
