@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createStore, RATE_SECONDS } from '../../src/lib/store';
 import { SCENES } from '../../src/lib/scenes';
+import { etFromIso } from '../../src/lib/ephemeris/time';
 
 const sc = (id: string) => SCENES.find((s) => s.id === id)!;
 const MIN = sc('launch').et;
@@ -143,5 +144,150 @@ describe('subscribe', () => {
     off();
     s.setView('overview');
     expect(n).toBe(3);
+  });
+});
+
+/** 現実の 1/60 秒刻みで再生し、速さ(現実の 1 秒あたりに進む秒数)の列を返す */
+function run(s: ReturnType<typeof make>, seconds: number): number[] {
+  const rates: number[] = [];
+  for (let i = 0; i < seconds * 60; i++) {
+    const before = s.get().et;
+    s.tick(1 / 60);
+    rates.push((s.get().et - before) * 60);
+  }
+  return rates;
+}
+
+describe('速度の配分(ふだんの再生)', () => {
+  const YEAR = RATE_SECONDS.year;
+
+  it('どの名場面の手前からでも、1 秒＝1 年の再生で前後 6 秒以内に抜けて元の速さへ戻る', () => {
+    for (const scene of SCENES) {
+      const s = make(Math.max(MIN, scene.et - 200 * 86400));
+      s.setRate('year');
+      s.play();
+      let slowStart = -1;
+      let slowEnd = -1;
+      for (let i = 0; i < 60 * 30 && s.get().playing; i++) {
+        const before = s.get().et;
+        s.tick(1 / 60);
+        const rate = (s.get().et - before) * 60;
+        const t = i / 60;
+        if (rate < YEAR * 0.95 && slowStart < 0) slowStart = t;
+        if (rate < YEAR * 0.95) slowEnd = t;
+        if (s.get().et > scene.et + 400 * 86400) break;
+      }
+      // 終わりが今日(右端)の場面は、通り過ぎた後が無いので所要時間は見ない
+      if (scene.et >= MAX - 86400) continue;
+      expect(slowEnd - slowStart, scene.id).toBeLessThanOrEqual(6);
+    }
+  });
+  it('名場面のちょうどから再生を始めると、2 秒後には選んだ速さの 8 割以上', () => {
+    for (const id of ['launch', 'jupiter', 'pbd']) {
+      const s = make(MIN);
+      s.jumpScene(id as never);
+      s.setRate('year');
+      s.play();
+      const rates = run(s, 2);
+      expect(rates[rates.length - 1], id).toBeGreaterThanOrEqual(YEAR * 0.8);
+    }
+  });
+  it('打ち上げの場面から 1 秒＝1 年で再生すると、4 秒で 1978 年へ進む', () => {
+    const s = make(MIN);
+    s.jumpScene('launch');
+    s.setRate('year');
+    s.play();
+    run(s, 4);
+    expect(s.get().et).toBeGreaterThan(sc('launch').et + 0.5 * YEAR);
+  });
+  it('通り過ぎた後は減速しない(場面の後ろでは近づく減速がかからない)', () => {
+    const pbd = sc('pbd');
+    const s = make(pbd.et + 30 * 86400);
+    s.setRate('year');
+    s.play();
+    const rates = run(s, 1);
+    expect(rates[rates.length - 1]).toBeCloseTo(YEAR, -3);
+  });
+  it('1 秒＝1 日以下は何も変えない', () => {
+    const s = make(sc('jupiter').et);
+    s.setRate('day');
+    s.play();
+    for (const r of run(s, 1)) expect(r).toBeCloseTo(RATE_SECONDS.day, 0);
+  });
+});
+
+describe('開いた直後の自動再生', () => {
+  const SPAN = MAX - MIN;
+  it('startIntro で打ち上げの日・引きの眺め・題字の段階から始まり、題字の間は時刻が動かない', () => {
+    const s = make(MAX);
+    s.startIntro();
+    const st = s.get();
+    expect(st.et).toBe(MIN);
+    expect(st.view).toBe('overview');
+    expect(st.playing).toBe(true);
+    expect(st.intro).toBe('title');
+    run(s, 2.5);
+    expect(s.get().et).toBe(MIN);
+    expect(s.get().intro).toBe('title');
+  });
+  it('題字のあと早回しに入り、時刻が進む。山場は全体の約 4 割の時間で 1981 年へ', () => {
+    const s = make(MAX);
+    s.startIntro();
+    run(s, 3.2);
+    expect(s.get().intro).toBe('run');
+    run(s, 8);
+    // 3.2 + 8 = 約 11.2 秒 = 早回しの約 8.2 秒(約 4 割)
+    expect(s.get().et).toBeGreaterThan(etFromIso('1980-06-01T00:00:00Z'));
+    expect(s.get().et).toBeLessThan(etFromIso('1982-06-01T00:00:00Z'));
+  });
+  it('自動再生中は名場面の減速が働かない(速さは配分だけで決まる)', () => {
+    const s = make(MAX);
+    s.startIntro();
+    run(s, 3.1);
+    // 打ち上げの直後でも、最初の山場の一定の速さ(後の名場面でも同じ)
+    const a = run(s, 0.5);
+    const b = run(s, 0.5);
+    expect(a[a.length - 1]).toBeCloseTo(b[0], -3);
+    expect(a[a.length - 1]).toBeGreaterThan(1e6);
+  });
+  it('終わったら今日で止まり、playing が false、段階は done', () => {
+    const s = make(MAX);
+    s.startIntro();
+    run(s, 24);
+    const st = s.get();
+    expect(st.et).toBe(MAX);
+    expect(st.playing).toBe(false);
+    expect(st.intro).toBe('done');
+  });
+  it('stopIntro でその場で止まり、操作を渡す', () => {
+    const s = make(MAX);
+    s.startIntro();
+    run(s, 10);
+    const et = s.get().et;
+    expect(et).toBeGreaterThan(MIN);
+    s.stopIntro();
+    expect(s.get().intro).toBe('off');
+    expect(s.get().playing).toBe(false);
+    run(s, 1);
+    expect(s.get().et).toBe(et);
+    expect(et).toBeLessThan(SPAN + MIN);
+  });
+  it('案内(done)は stopIntro で閉じる。操作(setTime など)でも自動再生は終わる', () => {
+    const a = make(MAX);
+    a.startIntro();
+    run(a, 24);
+    a.stopIntro();
+    expect(a.get().intro).toBe('off');
+    expect(a.get().et).toBe(MAX);
+    const b = make(MAX);
+    b.startIntro();
+    run(b, 5);
+    b.setTime(sc('pbd').et);
+    expect(b.get().intro).toBe('off');
+  });
+  it('skipIntro は再生せず、今日の引きの眺めで案内の段階にする', () => {
+    const s = make(MIN);
+    s.skipIntro();
+    expect(s.get()).toMatchObject({ et: MAX, view: 'overview', playing: false, intro: 'done' });
   });
 });

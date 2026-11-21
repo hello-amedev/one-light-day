@@ -16,6 +16,12 @@ export const RATE_SECONDS: Record<RateId, number> = {
   year: 31_557_600,
 };
 
+/**
+ * 開いた直後の自動再生の段階。'title' は題字(時刻は動かさない)、'run' は早回し、
+ * 'done' は今日で止まって案内を出している間、'off' は自動再生をしていない(利用者の操作で止めた後も)
+ */
+export type IntroPhase = 'off' | 'title' | 'run' | 'done';
+
 export interface AppState {
   /** いま表示している時刻(et) */
   et: number;
@@ -26,6 +32,8 @@ export interface AppState {
   lookTarget: LookTarget | null;
   /** 「向く」を押すたびに増える通し番号。同じ相手をもう一度押した時も 3D 側が気付けるようにする */
   lookSeq: number;
+  /** 開いた直後の自動再生の段階。既存の項目とは独立で、'title' と 'run' の間は playing も true */
+  intro: IntroPhase;
 }
 
 export interface AppStore {
@@ -56,9 +64,16 @@ export interface AppStore {
   prevScene(): void;
 
   /**
-   * 毎フレーム 3D 側が呼ぶ。再生中なら時刻を進める。名場面の近くでは自動で遅くする。
+   * 毎フレーム 3D 側が呼ぶ。再生中なら時刻を進める。名場面の近くでは自動で遅くする(自動再生中は決まった配分で進める)。
    * 右端に着いたら再生を止める。状態が変わったら true を返す。
    */
+  /** 自動再生を始める(引きの眺めで、打ち上げの日から)。時刻は tick が進める */
+  startIntro(): void;
+  /** 自動再生を止めて操作を渡す。今日まで再生が済んだ後の案内も閉じる */
+  stopIntro(): void;
+  /** 動きを減らす設定の人向け。再生せず、今日の引きの眺めで止めて、案内だけ出せる状態にする */
+  skipIntro(): void;
+
   tick(realDeltaSeconds: number): boolean;
 }
 

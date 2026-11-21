@@ -39,6 +39,10 @@
   --orbit-opacity: 1;
   --milkyway-gain: 1; /* 背景の天の川の明るさの倍率 */
 
+  /* 開いた直後の題字。幅の広い書体なので、スマホの縦画面(390px)でも収まる大きさにする */
+  --intro-title-size: min(2.25rem, 5vw);
+  --intro-title-tracking: 0.4em;
+
   /* 文字の大きさ */
   --text-xs: 0.6875rem;
   --text-s: 0.75rem;
@@ -55,6 +59,8 @@
   --dur-m: 240ms;
   --dur-l: 340ms;
   --dur-xl: 900ms; /* 名場面の文など、ゆっくり消えるもの */
+  --dur-intro-in: 1200ms; /* 開いた直後の題字が現れる */
+  --dur-intro-out: 700ms; /* 題字が消える。現れるより短くする */
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --ease-in-out: cubic-bezier(0.5, 0, 0.2, 1);
 

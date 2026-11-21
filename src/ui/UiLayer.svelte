@@ -7,6 +7,7 @@
   import { t } from '../lib/i18n';
   import type { AppStore } from '../lib/store';
   import type { BodyScreenPoint, StageStats } from '../stage';
+  import IntroOverlay from './IntroOverlay.svelte';
   import LookButtons from './LookButtons.svelte';
   import PhotoWindow from './PhotoWindow.svelte';
   import PlayControls from './PlayControls.svelte';
@@ -42,14 +43,29 @@
     timer = setTimeout(() => (idle = true), IDLE_MS);
   }
   onMount(wake);
+
+  // ── 開いた直後の自動再生 ──
+  // 題字の間は部品を出さず、早回しの間は日付と距離だけ見せる。終わったら(または止めたら)部品を出し直す
+  const intro = $derived(view.state.intro);
+  const introActive = $derived(intro === 'title' || intro === 'run');
+  let prevIntro = intro;
   $effect(() => {
-    onIdleChange?.(idle);
+    const cur = intro;
+    if (cur !== prevIntro && (cur === 'done' || cur === 'off')) wake();
+    prevIntro = cur;
+  });
+  /** 案内を出している間は、時間軸が薄くならないようにする */
+  const dim = $derived(idle && !introActive && intro !== 'done');
+  $effect(() => {
+    onIdleChange?.(dim || intro === 'title');
   });
   onDestroy(() => clearTimeout(timer));
 
   // ── 右下の数字 ──
   // 早回し(1 か月・1 年)の間は、地球からの距離が毎年行き来して読めないので、太陽からの距離に切り替える
-  const sunMode = $derived(view.state.playing && (view.state.rate === 'month' || view.state.rate === 'year'));
+  const sunMode = $derived(
+    view.state.playing && (view.state.rate === 'month' || view.state.rate === 'year' || introActive),
+  );
   const distKm = $derived(eph.distance('voyager1', sunMode ? 'sun' : 'earth', view.state.et));
 
   // ── ?debug ──
@@ -75,7 +91,7 @@
   onwheel={wake}
 />
 
-<div class="ui" class:idle>
+<div class="ui" class:idle={dim} class:intro-title={intro === 'title'} class:intro-run={intro === 'run'}>
   <header class="brand">
     <h1 class="title">{com.title}</h1>
     <ViewSwitch {store} />
@@ -112,6 +128,7 @@
 <!-- 見せたい中身なので、操作しない間に薄くなる層(.ui)の外に置く -->
 <PhotoWindow {store} {watchBody} />
 <SceneCaption {store} />
+<IntroOverlay {store} />
 
 <style>
   .ui {
@@ -157,6 +174,20 @@
   }
   /* 完全には消さず、押す範囲も生かしたまま薄くする */
   .ui.idle {
+    opacity: var(--idle-opacity);
+  }
+  /* 自動再生: 題字の間は全部、早回しの間は日付と距離以外を薄くしておく */
+  .ui.intro-title {
+    opacity: 0;
+  }
+  .brand,
+  .controls,
+  .timeline {
+    transition: opacity var(--dur-l) var(--ease-in-out);
+  }
+  .ui.intro-run .brand,
+  .ui.intro-run .controls,
+  .ui.intro-run .timeline {
     opacity: var(--idle-opacity);
   }
   .brand {
@@ -225,7 +256,10 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ui {
+    .ui,
+    .brand,
+    .controls,
+    .timeline {
       transition: none;
     }
   }

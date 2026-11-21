@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { etNow, loadEphemeris, type Ephemeris } from './lib/ephemeris';
   import { t } from './lib/i18n';
+  import { introMode } from './lib/intro';
   import { appendStars, loadStars, type StarCatalog } from './lib/stars';
   import { createStore, type AppStore } from './lib/store';
   import { applyUrlState } from './lib/urlState';
@@ -73,6 +74,13 @@
     eph = loadedEph;
     // 確認用の URL(?t= ?view= ?look=)を当てる。3D を作る前に済ませ、最初の 1 コマから反映する
     applyUrlState(created, location.search);
+    // 開いた直後の自動再生。確認用の URL・?intro=0 では始めない。3D を作る前に済ませ、最初の 1 コマから引きの眺めにする
+    const mode = introMode(
+      location.search,
+      typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
+    );
+    if (mode === 'play') created.startIntro();
+    else if (mode === 'still') created.skipIntro();
     store = created;
     status = 'ready';
 

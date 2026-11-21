@@ -3,6 +3,7 @@ import { bodies } from './bodies';
 import { caption } from './caption';
 import { common } from './common';
 import { hud } from './hud';
+import { intro } from './intro';
 import { photo } from './photo';
 import { scenes } from './scenes';
 import { timeline } from './timeline';
@@ -12,6 +13,7 @@ export const ja = {
   caption,
   common,
   hud,
+  intro,
   photo,
   scenes,
   timeline,

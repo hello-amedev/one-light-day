@@ -49,6 +49,9 @@
 | 操作の部品の層全体(配置・操作しない間に薄くする・?debug の計測値) | `UiLayer` | `src/ui/UiLayer.svelte` |
 | 写真の窓(開く条件 `photoWindowAvailable`・置き場所 `placePhotoWindow`) | `PhotoWindow` | `src/ui/PhotoWindow.svelte`・`src/ui/photoWindow.ts` |
 | 名場面に着いた時の短い文(条件 `sceneJumpedTo`) | `SceneCaption` | `src/ui/SceneCaption.svelte`・`src/ui/sceneCaption.ts` |
+| 開いた直後の題字と、今日で止まった時の案内の 1 行(止める操作もここ) | `IntroOverlay`(文言は `t().intro`。題字と副題は仮称なので `ja/intro.ts` だけ直す) | `src/ui/IntroOverlay.svelte` |
+| 自動再生の進み方(割合 → 時刻)・始めるかどうかの判定 | `introEt` / `introMode`(時刻を進めるのは `store.tick`。始める・止める・止めた状態で始めるは `startIntro` / `stopIntro` / `skipIntro`) | `src/lib/intro.ts`・`src/lib/store/index.ts` |
+| ふだんの再生で名場面の近くだけ遅くする(近づく時だけ減速、通過後 2 秒ほどで戻る) | `pacedRate` | `src/lib/store/pacing.ts` |
 | 開発用の代用データ(本番ビルドに入れない) | `createMockEphemeris` / `createMockStars` | `src/ui/dev/mockData.ts` |
 
 重ね方: canvas(3D)→ 目印の層(3D の担当が使う)→ 操作の部品の層(`.ui` は `pointer-events: none`、部品だけ `auto`)。
