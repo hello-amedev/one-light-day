@@ -1,6 +1,6 @@
 <script lang="ts">
   // 画面の入口。位置と星のデータを読み込み、状態を作り、3D(canvas)とその上の操作の部品を重ねる。
-  // 3D の表示(src/stage)が作れなかった時(WebGL が無いなど)は、操作の部品だけで動かす。
+  // 3D の表示(src/stage)が作れなかった時(WebGL が無いなど)は、静止画と案内だけを出す(Fallback)。
   import { onDestroy, onMount } from 'svelte';
   import { etNow, loadEphemeris, type Ephemeris } from './lib/ephemeris';
   import { t } from './lib/i18n';
@@ -9,6 +9,7 @@
   import { createStore, type AppStore } from './lib/store';
   import { applyUrlState } from './lib/urlState';
   import { createStage, type Stage } from './stage';
+  import Fallback from './ui/Fallback.svelte';
   import UiLayer from './ui/UiLayer.svelte';
 
   const com = t().common;
@@ -22,6 +23,8 @@
   let stage = $state.raw<Stage | null>(null);
   /** 操作しない間(UiLayer が知らせる)。目印の層と軌道の線を文字や目盛りと一緒に薄くする */
   let idle = $state(false);
+  /** 3D の表示を始められなかった(WebGL が無いなど)。静止画と案内だけを出す */
+  let no3d = $state(false);
 
   let frame = 0;
   let stopLoop: (() => void) | undefined;
@@ -89,12 +92,15 @@
     requestAnimationFrame(() => {
       if (canvas && overlay) {
         try {
+          // 確認用: ?no3d で、わざと 3D を始めない(3D が使えない端末の表示を確かめる)
+          if (new URLSearchParams(location.search).has('no3d')) throw new Error('3D disabled by ?no3d');
           stage = createStage({ canvas, overlay, eph: loadedEph, stars: loadedStars, store: created });
         } catch (error) {
-          console.warn('3D の表示を始められないため、操作の部品だけで動かします', error);
+          console.warn('3D の表示を始められないため、静止画と案内を出します', error);
+          no3d = true;
         }
       }
-      if (!stage) startFallbackLoop(created);
+      if (!stage && !no3d) startFallbackLoop(created);
     });
   });
 
@@ -113,7 +119,9 @@
   <canvas class="stage" bind:this={canvas}></canvas>
   <div class="markers" class:idle bind:this={overlay}></div>
 
-  {#if status === 'ready' && store && eph}
+  {#if no3d}
+    <Fallback />
+  {:else if status === 'ready' && store && eph}
     <UiLayer
       {store}
       {eph}

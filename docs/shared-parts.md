@@ -41,6 +41,9 @@
 | ボタンを置く(文字だけ。選択中は金の下線。押す範囲は指で 44px) | `UiButton`(`pressed` で選択中、`label` で読み上げ) | `src/ui/UiButton.svelte` |
 | 矢印を描く(送り・名場面の移動) | `Chevron`(`bar` で名場面用) | `src/ui/Chevron.svelte` |
 | 数字のブロック(ラベル・大きい数字・補足) | `Readout`(日付も距離もこれ。補足の行は空でも高さを残す) | `src/ui/Readout.svelte` |
+| 数字が変わる時に桁を回す(ゆっくり変わる時だけ。判断 `planRoll`) | `RollingNumber`(`Readout` の大きい数字で使っている) | `src/ui/RollingNumber.svelte`・`src/ui/rolling.ts` |
+| 3D が使えない端末の表示(静止画と案内。確認は `?no3d`) | `Fallback` | `src/ui/Fallback.svelte` |
+| 共有用の画像・静止画の撮り直し、表示の確認のスクリーンショット | `tools/shots/shoot.mjs` | `tools/shots/` |
 | 送りダイヤル 1 つ(‹ 1日 ›) | `StepDial` | `src/ui/StepDial.svelte` |
 | 視点の切り替え | `ViewSwitch` | `src/ui/ViewSwitch.svelte` |
 | 向くボタン(木星・土星・月は近い時期だけ) | `LookButtons` | `src/ui/LookButtons.svelte` |
