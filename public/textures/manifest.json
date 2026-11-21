@@ -160,5 +160,14 @@
     "credit": "NASA/JPL-Caltech",
     "source": "https://science.nasa.gov/photojournal/pale-blue-dot-revisited/",
     "note": "PIA23645(2020年の再処理版)。配布されている 5230×5175 画素の版を、長辺 1600 画素に縮めただけ。地図ではなく写真"
+  },
+  "earthmoon": {
+    "file": "earthmoon.jpg",
+    "width": 565,
+    "height": 790,
+    "bytes": 9171,
+    "credit": "NASA/JPL",
+    "source": "https://science.nasa.gov/photojournal/crescent-earth-and-moon/",
+    "note": "PIA00013(1977-09-18 撮影)。3 枚の色の画像の合成で、月は 3 倍明るくしてある(NASA の処理)。配布されている版のまま"
   }
 }

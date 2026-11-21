@@ -5,7 +5,7 @@ import { etFromIso } from './ephemeris/time';
 /** 題字を見せる秒数。この間、時刻は打ち上げのまま動かさない */
 export const INTRO_TITLE_SECONDS = 3;
 /** 早回しの秒数 */
-export const INTRO_RUN_SECONDS = 20;
+export const INTRO_RUN_SECONDS = 30;
 /** 今日で止まった後、案内の 1 行を出しておく秒数 */
 export const INTRO_GUIDE_SECONDS = 6;
 

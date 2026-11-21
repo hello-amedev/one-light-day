@@ -28,6 +28,7 @@ const FILES = [
   { file: 'Callisto_Voyager_GalileoSSI_global_mosaic_1km.tif', url: `${USGS}/Callisto_Voyager_GalileoSSI_global_mosaic_1km.tif`, sha256: 'e1f0bd2e0e05de605d067d6b5f5ededddaf31ca6c064562a1ca770f15a7dbaa3' },
   { file: 'milkyway_2020_4k.exr', url: 'https://svs.gsfc.nasa.gov/vis/a000000/a004800/a004851/milkyway_2020_4k.exr', sha256: '2eb802d6e68d170b410f766c7fec07f7518619f6b6708fdc81e9302d93e74fdb' },
   { file: 'PIA23645.jpg', url: 'https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia23/pia23645/PIA23645.jpg', sha256: 'b783a29a134377ba41ffe8f644fd1f066b591b77b316daac3d32b315cc265c34' },
+  { file: 'PIA00013.jpg', url: 'https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia00/pia00013/PIA00013.jpg', sha256: '62894fa8549c3ff1522c7802b78a41f1a8a16d682de201da9ada0a7851cd2b16' },
 ];
 
 // manifest に書く、天体ごとの向きと出典。向きは docs/assets/textures.md の「向きの確認」で画像の中身から確かめた値
@@ -131,6 +132,9 @@ if (py.status !== 0) throw new Error('加工(process.py)に失敗しました。
 const pbd = spawnSync('sips', ['-Z', '1600', '-s', 'format', 'jpeg', '-s', 'formatOptions', '90', join(CACHE, 'PIA23645.jpg'), '--out', join(OUT, 'pbd.jpg')], { stdio: 'ignore' });
 if (pbd.status !== 0) throw new Error('failed to resize the Pale Blue Dot photo with sips');
 
+// 地球と月の写真(PIA00013)は、配布されている版が 565×790 画素と小さいので、そのまま置く(名場面の文と一緒に浮かばせる)
+copyFileSync(join(CACHE, 'PIA00013.jpg'), join(OUT, 'earthmoon.jpg'));
+
 const dims = JSON.parse(readFileSync(join(CACHE, 'dims.json'), 'utf8'));
 const manifest = {};
 for (const [name, meta] of Object.entries(BODIES)) {
@@ -141,6 +145,12 @@ manifest.pbd = {
   credit: 'NASA/JPL-Caltech',
   source: 'https://science.nasa.gov/photojournal/pale-blue-dot-revisited/',
   note: 'PIA23645(2020年の再処理版)。配布されている 5230×5175 画素の版を、長辺 1600 画素に縮めただけ。地図ではなく写真',
+};
+manifest.earthmoon = {
+  file: 'earthmoon.jpg', width: 565, height: 790, bytes: statSync(join(OUT, 'earthmoon.jpg')).size,
+  credit: 'NASA/JPL',
+  source: 'https://science.nasa.gov/photojournal/crescent-earth-and-moon/',
+  note: 'PIA00013(1977-09-18 撮影)。3 枚の色の画像の合成で、月は 3 倍明るくしてある(NASA の処理)。配布されている版のまま',
 };
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 

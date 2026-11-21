@@ -30,6 +30,7 @@
 | callisto | https://astrogeology.usgs.gov/search/map/callisto_voyager_galileo_ssi_global_mosaic_1km | https://planetarymaps.usgs.gov/mosaic/Callisto_Voyager_GalileoSSI_global_mosaic_1km.tif(15138×7569、約115MB) | e1f0bd2e…3dbaa3 | U.S. Geological Survey |
 | milkyway | https://svs.gsfc.nasa.gov/4851/ | https://svs.gsfc.nasa.gov/vis/a000000/a004800/a004851/milkyway_2020_4k.exr(4096×2048、約35MB、半精度浮動小数点) | 2eb802d6…f74fdb | NASA/Goddard Space Flight Center Scientific Visualization Studio、Gaia DR2: ESA/Gaia/DPAC |
 | pbd | https://science.nasa.gov/photojournal/pale-blue-dot-revisited/ | https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia23/pia23645/PIA23645.jpg(5230×5175、約0.6MB) | b783a29a…c265c34 | NASA/JPL-Caltech(2020年の再処理版) |
+| earthmoon | https://science.nasa.gov/photojournal/crescent-earth-and-moon/ | https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia00/pia00013/PIA00013.jpg(565×790、約9KB。2026-11-22 に取得) | 62894fa8…cd2b16 | NASA/JPL |
 
 SHA-256 の全文は `tools/textures/build.mjs` の `FILES` にある。
 
@@ -41,6 +42,7 @@ SHA-256 の全文は `tools/textures/build.mjs` の `FILES` にある。
 - 衛星(USGS): 「Use Constraints: None」
 - milkyway: 出典は上の表のとおり。ページに別の許諾の記載なし。NASA の一般の方針と、Gaia データの CC BY-NC 3.0 IGO
 - pbd: JPL の画像の方針
+- earthmoon: ページの出典は「NASA/JPL」。JPL の画像の方針(事前の許可は不要・出典を書く)。3 枚の色の画像の合成で、月は NASA が 3 倍明るくしてある(サイトの「このサイトについて」に書いた)
 
 一覧(stage3-assets.md)の記載との食い違いは無かった。
 

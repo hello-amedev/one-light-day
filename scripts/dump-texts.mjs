@@ -33,6 +33,7 @@ const AREAS = [
 const PLACES = [
   ['common.title', '画面の左上の題字'],
   ['common.listSeparator', '名前を並べる時の区切り（「木星、土星」のように）'],
+  ['common.phraseBreaks', '名場面・出来事の文で、改行してよい所の記号（この記号の直後でだけ改行する。画面には出ない）'],
   ['common.loading', '位置のデータを読み込んでいる間の中央の表示'],
   ['common.loadFailed', '位置のデータを読み込めなかった時の中央の表示'],
   ['intro.title', '開いた直後の中央の題字(1 行目)'],
@@ -99,6 +100,9 @@ const PLACES = [
   ['photo.credit', '写真の窓の 2 行目'],
   ['photo.note', '写真の窓の 3 行目'],
   ['photo.reopen', '窓を閉じた後の、地球の目印の読み上げ'],
+  ['photo.floating.earthMoonAlt', '出来事「地球と月を一緒に撮影」の文と一緒に浮かぶ写真の代替文（読み上げ）'],
+  ['photo.floating.earthMoonCredit', '浮かぶ地球と月の写真の下の出典'],
+  ['photo.floating.pbdCredit', '名場面「ペイル・ブルー・ドット」の文と一緒に浮かぶ写真の下の出典（代替文は photo.alt）'],
   ['about.entry', 'メニューの項目（押すと板が開く）'],
   ['about.kicker', '板の上端の小さな題字'],
   ['about.title', '板の読み上げ'],

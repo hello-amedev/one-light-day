@@ -14,4 +14,10 @@ export const photo = {
   note: '光の筋は、カメラの中で散った太陽の光です',
   /** 窓を閉じた後、地球の目印を押すとまた開く */
   reopen: '写真を開く',
+  /** 名場面・出来事の文と一緒に浮かばせる写真（代替文と出典）。ペイル・ブルー・ドットの代替文は上の alt を使う */
+  floating: {
+    earthMoonAlt: 'ボイジャー1号が1977年に、地球から約1,166万kmの所で撮った写真。三日月形の地球と、その上に小さく月が写っている',
+    earthMoonCredit: '出典：NASA/JPL',
+    pbdCredit: '出典：NASA/JPL-Caltech',
+  },
 };

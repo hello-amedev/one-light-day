@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createStore, RATE_SECONDS } from '../../src/lib/store';
 import { SCENES } from '../../src/lib/scenes';
 import { etFromIso } from '../../src/lib/ephemeris/time';
+import { INTRO_RUN_SECONDS, INTRO_TITLE_SECONDS } from '../../src/lib/intro';
 
 const sc = (id: string) => SCENES.find((s) => s.id === id)!;
 const MIN = sc('launch').et;
@@ -236,8 +237,8 @@ describe('開いた直後の自動再生', () => {
     s.startIntro();
     run(s, 3.2);
     expect(s.get().intro).toBe('run');
-    run(s, 8);
-    // 3.2 + 8 = 約 11.2 秒 = 早回しの約 8.2 秒(約 4 割)
+    run(s, INTRO_RUN_SECONDS * 0.4);
+    // 題字の後の 0.2 秒 + 早回しの 4 割
     expect(s.get().et).toBeGreaterThan(etFromIso('1980-06-01T00:00:00Z'));
     expect(s.get().et).toBeLessThan(etFromIso('1982-06-01T00:00:00Z'));
   });
@@ -254,7 +255,7 @@ describe('開いた直後の自動再生', () => {
   it('終わったら今日で止まり、playing が false、段階は done', () => {
     const s = make(MAX);
     s.startIntro();
-    run(s, 24);
+    run(s, INTRO_TITLE_SECONDS + INTRO_RUN_SECONDS + 1);
     const st = s.get();
     expect(st.et).toBe(MAX);
     expect(st.playing).toBe(false);
@@ -276,7 +277,7 @@ describe('開いた直後の自動再生', () => {
   it('案内(done)は stopIntro で閉じる。操作(setTime など)でも自動再生は終わる', () => {
     const a = make(MAX);
     a.startIntro();
-    run(a, 24);
+    run(a, INTRO_TITLE_SECONDS + INTRO_RUN_SECONDS + 1);
     a.stopIntro();
     expect(a.get().intro).toBe('off');
     expect(a.get().et).toBe(MAX);

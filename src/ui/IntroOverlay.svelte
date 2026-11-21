@@ -1,8 +1,13 @@
 <script lang="ts">
   // 開いた直後の題字と、自動再生が今日で止まった時の案内の 1 行。操作の部品の層(薄くなる .ui)の外に置く。
   // 画面を押す・キーを押す・ホイールを回すと、その場で自動再生を止めて操作を渡す。
-  import { onDestroy } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { INTRO_GUIDE_SECONDS } from '../lib/intro';
+  import { HOLD_MS } from './captionQueue';
+  import PhraseText from './PhraseText.svelte';
+
+  /** 1光日の文が出し終わって薄れ終わるまでの時間(文を出す時間 + 消える動き --dur-xl の 900ms と少しの間) */
+  const GUIDE_AFTER_CAPTION_MS = HOLD_MS + 1000;
   import { t } from '../lib/i18n';
   import type { AppStore } from '../lib/store';
   import { watchStore } from './store.svelte';
@@ -12,18 +17,34 @@
   const view = watchStore(store);
 
   const showTitle = $derived(view.state.intro === 'title');
-  const showGuide = $derived(view.state.intro === 'done');
+  /** 案内を出しているか。自動再生が今日で止まった後、1光日の文が消えてから出す */
+  let showGuide = $state(false);
   /** 操作で消す時は速く、時間が来て消す時はゆっくり */
   let quick = $state(false);
 
-  // 案内は時間が来たら閉じる(store を 'off' に戻す。操作の部品の層もこれで薄くなる準備が整う)
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  // 自動再生で今日に着いた時は、同じ場所に「地球から1光日」の文が出ている(SceneCaption)。
+  // 文が出し終わって消えるまで待ってから案内を出し、案内も時間が来たら閉じる(store を 'off' に戻す)
+  let lastIntro = untrack(() => view.state.intro);
+  let timers: ReturnType<typeof setTimeout>[] = [];
+  const clearTimers = () => {
+    for (const id of timers) clearTimeout(id);
+    timers = [];
+  };
   $effect(() => {
-    if (!showGuide) return;
-    timer = setTimeout(() => store.stopIntro(), INTRO_GUIDE_SECONDS * 1000);
-    return () => clearTimeout(timer);
+    const intro = view.state.intro;
+    const prev = lastIntro;
+    lastIntro = intro;
+    if (intro !== 'done') {
+      showGuide = false;
+      return;
+    }
+    const s = untrack(() => view.state);
+    const wait = prev === 'run' && s.display.captions && !s.starsOnly ? GUIDE_AFTER_CAPTION_MS : 0;
+    timers.push(setTimeout(() => (showGuide = true), wait));
+    timers.push(setTimeout(() => store.stopIntro(), wait + INTRO_GUIDE_SECONDS * 1000));
+    return clearTimers;
   });
-  onDestroy(() => clearTimeout(timer));
+  onDestroy(clearTimers);
 
   function touch() {
     if (view.state.intro === 'off') return;
@@ -41,7 +62,7 @@
 </div>
 
 <div class="guide" class:shown={showGuide} class:quick role="status" aria-live="polite">
-  {#if showGuide}{txt.guide}{/if}
+  {#if showGuide}<PhraseText text={txt.guide} />{/if}
 </div>
 
 <style>

@@ -92,12 +92,14 @@ describe('出す順番と時間', () => {
 
 describe('出す・消す条件', () => {
   const base = { display: { captions: true }, starsOnly: false, intro: 'off' };
-  it('表示の切り替えが切れている・星空だけ・自動再生が済んだ案内の間は出さない', () => {
+  it('表示の切り替えが切れている・星空だけの間は出さない。自動再生が今日で止まった後(1光日の文)は出す', () => {
     expect(captionsAllowed(base)).toBe(true);
     expect(captionsAllowed({ ...base, display: { captions: false } })).toBe(false);
     expect(captionsAllowed({ ...base, starsOnly: true })).toBe(false);
-    expect(captionsAllowed({ ...base, intro: 'done' })).toBe(false);
-    expect(captionsAllowed({ ...base, intro: 'run' })).toBe(true);
+    const done = { ...base, intro: 'done' };
+    const run = { ...base, intro: 'run' };
+    expect(captionsAllowed(done)).toBe(true);
+    expect(captionsAllowed(run)).toBe(true);
   });
   const st = (o: Partial<{ et: number; playing: boolean; lookSeq: number; arrivalSeq: number }> = {}) => ({
     et: 100,
@@ -139,5 +141,16 @@ describe('出来事の文', () => {
     if (/\d+\s*日/.test(titan.replace(/\d+時間/g, ''))) expect(titan).toContain('UTC');
     expect(t().events.lines.titanFlyby).not.toMatch(/6,?490/);
     expect(t().events.lines.ioVolcano).toMatch(/撮影.*発見/);
+  });
+});
+
+describe('文に添える写真', () => {
+  it('地球と月の出来事と、ペイル・ブルー・ドットの名場面にだけ写真がある', async () => {
+    const { captionPhotoOf } = await import('../../src/ui/captionPhoto');
+    expect(captionPhotoOf({ kind: 'event', id: 'earthMoonPhoto' })?.file).toBe('earthmoon.jpg');
+    expect(captionPhotoOf({ kind: 'scene', id: 'pbd' })?.file).toBe('pbd.jpg');
+    expect(captionPhotoOf({ kind: 'scene', id: 'jupiter' })).toBeNull();
+    expect(captionPhotoOf({ kind: 'event', id: 'camerasOff' })).toBeNull();
+    expect(captionPhotoOf(null)).toBeNull();
   });
 });

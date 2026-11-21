@@ -85,9 +85,9 @@ export function captionsCrossed(prevEt: number, nextEt: number, includeEvents: b
   return found.sort((a, b) => a.et - b.et).map((f) => f.ref);
 }
 
-/** 文を出してよい状態か */
-export function captionsAllowed(s: { display: { captions: boolean }; starsOnly: boolean; intro: string }): boolean {
-  return s.display.captions && !s.starsOnly && s.intro !== 'done';
+/** 文を出してよい状態か。自動再生が今日で止まった後(intro が 'done')も、1光日の文を出すので止めない */
+export function captionsAllowed(s: { display: { captions: boolean }; starsOnly: boolean }): boolean {
+  return s.display.captions && !s.starsOnly;
 }
 
 export type CaptionAction = 'show' | 'hide' | 'none';
