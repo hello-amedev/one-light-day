@@ -10,14 +10,16 @@
   import type { BodyScreenPoint, StageStats } from '../stage';
   import AboutPanel from './AboutPanel.svelte';
   import IntroOverlay from './IntroOverlay.svelte';
-  import LookButtons from './LookButtons.svelte';
+  import LookMenu from './LookMenu.svelte';
+  import MainMenu from './MainMenu.svelte';
   import PhotoWindow from './PhotoWindow.svelte';
   import PlayControls from './PlayControls.svelte';
   import Readout from './Readout.svelte';
+  import ReadoutExtra from './ReadoutExtra.svelte';
   import SceneCaption from './SceneCaption.svelte';
   import Timeline from './Timeline.svelte';
-  import UiButton from './UiButton.svelte';
   import ViewSwitch from './ViewSwitch.svelte';
+  import { readoutExtra, starsOnlyHintKind, STARS_ONLY_HINT_MS } from './controls';
   import { watchStore } from './store.svelte';
 
   interface Props {
@@ -34,6 +36,7 @@
 
   const com = t().common;
   const txt = t().hud;
+  const menuTxt = t().menu;
   const view = watchStore(store);
 
   // ── 「このサイトについて」 ──
@@ -42,6 +45,37 @@
   function openAbout() {
     store.pause();
     aboutOpen = true;
+  }
+
+  // ── 一覧(メニュー・向く)。開いている間は薄くしない ──
+  // 確認用に、?open=menu か ?open=look で一覧を開いた状態から、?open=stars で星空だけを表示から始められる(?debug と同じ作り)
+  const openParam = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('open') : null;
+  let menuOpen = $state(openParam === 'menu');
+  let lookOpen = $state(openParam === 'look');
+  onMount(() => {
+    if (openParam === 'stars') store.setStarsOnly(true);
+  });
+  const popOpen = $derived(menuOpen || lookOpen);
+
+  // ── 星空だけを表示 ──
+  // 数字と操作をすべて隠す(戻るのは 3D 側の星空のタップ、または Esc)。入った時に戻し方を数秒だけ案内する
+  const starsOnly = $derived(view.state.starsOnly);
+  const hintKind = $derived(
+    starsOnlyHintKind(typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches),
+  );
+  let hintShown = $state(false);
+  $effect(() => {
+    if (!starsOnly) {
+      hintShown = false;
+      return;
+    }
+    hintShown = true;
+    const id = setTimeout(() => (hintShown = false), STARS_ONLY_HINT_MS);
+    return () => clearTimeout(id);
+  });
+  function keydown(e: KeyboardEvent) {
+    wake();
+    if (e.key === 'Escape' && view.state.starsOnly) store.setStarsOnly(false);
   }
 
   // ── 操作しない間は薄くする ──
@@ -66,7 +100,7 @@
     prevIntro = cur;
   });
   /** 案内を出している間は、時間軸が薄くならないようにする */
-  const dim = $derived(idle && !introActive && intro !== 'done');
+  const dim = $derived(idle && !introActive && intro !== 'done' && !popOpen);
   $effect(() => {
     onIdleChange?.(dim || intro === 'title');
   });
@@ -81,6 +115,8 @@
   // 「地球から1光日」の前後 2 日だけ、光が届くまでの時間を秒まで出す(24時間0分0秒になる瞬間が見えるように)
   const lightDayEt = SCENES.find((sc) => sc.id === 'lightday')?.et ?? Infinity;
   const showLightSeconds = $derived(Math.abs(view.state.et - lightDayEt) <= 2 * 86400);
+
+  const extra = $derived(readoutExtra(view.state.view, view.state.magnification, view.state.craftDistance));
 
   // ── ?debug ──
   const debug = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
@@ -101,24 +137,39 @@
   onpointermove={wake}
   onpointerdown={wake}
   ontouchstart={wake}
-  onkeydown={wake}
+  onkeydown={keydown}
   onwheel={wake}
 />
 
-<div class="ui" class:idle={dim} class:intro-title={intro === 'title'} class:intro-run={intro === 'run'}>
+<div
+  class="ui"
+  class:idle={dim}
+  class:intro-title={intro === 'title'}
+  class:intro-run={intro === 'run'}
+  class:stars-only={starsOnly}
+>
   <header class="brand">
     <h1 class="title">{com.title}</h1>
     <ViewSwitch {store} />
   </header>
 
-  <div class="date">
-    <Readout value={formatDate(view.state.et)} sub={formatSinceLaunch(view.state.et)} />
-    <div class="about-entry">
-      <UiButton onclick={openAbout}>{t().about.entry}</UiButton>
+  <div class="top">
+    <div class="date">
+      <Readout value={formatDate(view.state.et)} sub={formatSinceLaunch(view.state.et)} />
+    </div>
+    <div class="menu">
+      <MainMenu {store} onabout={openAbout} bind:open={menuOpen} />
     </div>
   </div>
 
+  {#if view.state.view !== 'craft'}
+    <div class="look">
+      <LookMenu {store} {eph} bind:open={lookOpen} />
+    </div>
+  {/if}
+
   <div class="readout-area">
+    <ReadoutExtra extra={extra} />
     <Readout
       rowOnPhone
       label={sunMode ? txt.fromSun : txt.fromEarth}
@@ -128,13 +179,13 @@
     />
   </div>
 
-  <div class="controls">
-    <LookButtons {store} {eph} />
-    <PlayControls {store} />
-  </div>
-
-  <div class="timeline">
-    <Timeline {store} />
+  <div class="bottom">
+    <div class="transport">
+      <PlayControls {store} />
+    </div>
+    <div class="timeline">
+      <Timeline {store} />
+    </div>
   </div>
 
   {#if debug && stats}
@@ -142,12 +193,17 @@
   {/if}
 </div>
 
-<!-- 見せたい中身なので、操作しない間に薄くなる層(.ui)の外に置く -->
-<PhotoWindow {store} {watchBody} />
+<!-- 見せたい中身なので、操作しない間に薄くなる層(.ui)の外に置く。星空だけを表示の間は隠す -->
+<div class="photo-layer" class:hidden={starsOnly}>
+  <PhotoWindow {store} {watchBody} />
+</div>
 <SceneCaption {store} />
 <IntroOverlay {store} />
 {#if aboutOpen}
   <AboutPanel onclose={() => (aboutOpen = false)} />
+{/if}
+{#if hintShown}
+  <div class="hint" role="status">{hintKind === 'tap' ? menuTxt.starsOnlyHintTap : menuTxt.starsOnlyHintClick}</div>
 {/if}
 
 <style>
@@ -159,15 +215,17 @@
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-rows: auto 1fr auto auto;
     grid-template-areas:
-      'brand date'
+      'brand top'
       '. .'
-      'controls readout'
-      'timeline timeline';
+      'look readout'
+      'bottom bottom';
     row-gap: var(--space-2);
     padding: calc(var(--safe-top) + var(--space-3)) calc(var(--safe-right) + var(--space-3))
       calc(var(--safe-bottom) + var(--space-2)) calc(var(--safe-left) + var(--space-3));
     font-family: var(--font-body);
-    transition: opacity var(--dur-l) var(--ease-in-out);
+    transition:
+      opacity var(--dur-l) var(--ease-in-out),
+      visibility 0s linear 0s;
   }
   /* 計器盤のあしらい: 左上と右下に細い金の括弧。押す操作は素通しにする */
   .ui::before,
@@ -200,16 +258,29 @@
   .ui.intro-title {
     opacity: 0;
   }
+  /* 星空だけを表示: 全部隠す。隠す時は薄れてから外し、戻る時はすぐ出して、ふっと現れる */
+  .ui.stars-only {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--dur-l) var(--ease-in-out),
+      visibility 0s linear var(--dur-l);
+  }
+  .photo-layer.hidden {
+    visibility: hidden;
+  }
   .brand,
-  .controls,
+  .look,
+  .transport,
   .timeline,
-  .about-entry {
+  .menu {
     transition: opacity var(--dur-l) var(--ease-in-out);
   }
   .ui.intro-run .brand,
-  .ui.intro-run .controls,
+  .ui.intro-run .look,
+  .ui.intro-run .transport,
   .ui.intro-run .timeline,
-  .ui.intro-run .about-entry {
+  .ui.intro-run .menu {
     opacity: var(--idle-opacity);
   }
   .brand {
@@ -228,31 +299,51 @@
     color: var(--color-text);
     text-shadow: var(--text-halo);
   }
-  .date {
-    grid-area: date;
+  /* 右上: 日付と、その右のメニューのアイコン */
+  .top {
+    grid-area: top;
     justify-self: end;
+    display: flex;
+    align-items: flex-start;
+  }
+  .date {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
   }
-  /* 文字の右端を日付の右端にそろえる(ボタンの余白ぶん戻す) */
-  .about-entry {
+  /* アイコンの余白ぶん、右の端へ寄せる */
+  .menu {
     margin-right: calc(var(--space-2) * -1);
+  }
+  .look {
+    grid-area: look;
+    align-self: end;
+    justify-self: start;
   }
   .readout-area {
     grid-area: readout;
     align-self: end;
     justify-self: end;
-  }
-  .controls {
-    grid-area: controls;
-    align-self: end;
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     min-width: 0;
   }
+  /* 時間軸の左に、再生・速さ・送り */
+  .bottom {
+    grid-area: bottom;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+  .transport {
+    flex: none;
+    margin-left: calc(var(--space-2) * -1);
+  }
   .timeline {
-    grid-area: timeline;
+    flex: 1;
+    min-width: 0;
   }
   .debug {
     position: absolute;
@@ -264,32 +355,75 @@
     text-shadow: var(--text-halo);
   }
 
-  /* スマホの縦画面: 題字と日付は上、数字・ボタン・時間軸は親指が届く下側に集める */
+  /* 星空だけを表示に入った時の案内。数秒でゆっくり消える */
+  .hint {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--safe-bottom) + 18%);
+    transform: translateX(-50%);
+    max-width: calc(100vw - var(--space-4) * 2);
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: var(--text-m);
+    letter-spacing: var(--body-tracking);
+    color: var(--color-text);
+    text-shadow: var(--text-halo);
+    pointer-events: none;
+    animation: hint-fade 4s var(--ease-in-out) both;
+  }
+  @keyframes hint-fade {
+    0% {
+      opacity: 0;
+    }
+    10%,
+    70% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* スマホの縦画面: 題字と日付は上、数字・操作・時間軸は親指が届く下側に集める。
+     向くと、再生・速さ・送りは 1 行に並べ、時間軸はその下の全幅にする */
   @media (max-width: 640px) and (orientation: portrait) {
     .ui {
       grid-template-columns: minmax(0, 1fr) auto;
       grid-template-rows: auto 1fr auto auto auto;
       grid-template-areas:
-        'brand date'
+        'brand top'
         '. .'
         'readout readout'
-        'controls controls'
+        'look transport'
         'timeline timeline';
+    }
+    .bottom {
+      display: contents;
+    }
+    .transport {
+      grid-area: transport;
+      margin-left: 0;
+      margin-right: calc(var(--space-2) * -1);
+    }
+    .timeline {
+      grid-area: timeline;
     }
     .readout-area {
       justify-self: stretch;
-    }
-    .controls {
-      align-self: stretch;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .ui,
     .brand,
-    .controls,
-    .timeline {
+    .look,
+    .transport,
+    .timeline,
+    .menu {
       transition: none;
+    }
+    .hint {
+      animation: none;
     }
   }
 </style>
