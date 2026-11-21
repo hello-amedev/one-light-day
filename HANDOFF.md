@@ -34,14 +34,13 @@ GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改
   中身は Artifact の db の `checks` コレクション(ArtifactData の list で読む。項目を足す時は order を 10 刻みで、status は todo / ok / fix)。直したら status はあめさんに付け直してもらう
 - 星の数は約9千個のまま(あめさんの指定なし)。約4万個は `?stars=deep` で試せる
 
-- **第6段階(本番での確認を受けた見直し)は実装が終わり、手元で確かめて main に入れた(2026-11-21)。公開のワークフローの実行と確認リストへの項目の追加はまだ**(あめさんの OK は出たが、セッションの自動の許可判定が `gh workflow run` を止めた)。中身は SPEC.md の「第6段階の仕様」1〜8、
+- **第6段階(本番での確認を受けた見直し)は本番に反映済み(2026-11-21)。確認リストに第6段階の 9 項目を足し、あめさんの確認待ち**。中身は SPEC.md の「第6段階の仕様」1〜8、
   確かめたこと・確かめていないことは PROGRESS.md の第6段階。出来事の文は下書き(docs/texts.md の「出来事」)。確認用の URL に `&mag=<倍率>`・`&view=craft`・`&open=menu|look|stars` を足した
 
-直近の作業: (1) 告知なしの公開(リポジトリの改名と公開、Pages、検索よけ)と確認リストの用意、(2) あめさんの 8 つの要望を検証して第6段階の仕様にまとめた(実物どおりの 3D モデル (B)、上限を狭角カメラに、出来事を名場面に含める、速さの前後を数字で)。
+直近の作業: (1) あめさんの 8 つの要望を検証して第6段階の仕様にまとめた、(2) 第6段階の実装(別セッション)と本番への反映・確認リストの更新。
 
 ## 3. 次回着手するなら
 
-0. **第6段階の反映**: main には入っている。公開用のワークフロー(`gh workflow run deploy.yml --repo hello-amedev/one-light-day --ref main`)を動かして本番を確かめ、確認リスト(Artifact の db)に第6段階の項目を足す。古い項目のうち仕様で解決したもの(星の数など)は note に書いて status は変えない
 1. 確認リストを読んで、「直したい」の項目を直す: 文言(辞書を直したら `node scripts/dump-texts.mjs` で一覧を作り直す)、見え方(天の川の濃さは `--milkyway-gain`、太陽の光は `--sun-glare`)。
    直したら main に入れて、公開用のワークフローを手で動かす(`gh workflow run deploy.yml --repo hello-amedev/one-light-day --ref main`)
 2. 告知の前に: 検索よけを外して公開し直す(docs/publish.md「告知の前に」)。サイト名を変える時は、辞書 `src/lib/i18n/ja/intro.ts`、`index.html` の題と説明、`tools/shots/shoot.mjs` の題字を直して `public/og.jpg` を撮り直す
