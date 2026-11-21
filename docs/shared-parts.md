@@ -80,6 +80,9 @@
 | 早回し中の惑星の残像の弧(1 コマで 3 度以上進む時、点の代わりに。判断は前のコマとの時刻の差) | `classifyStreak` / `stepAngleDeg` / `PlanetStreaks` | `src/stage/streak.ts`・`streaks.ts` |
 | 縮尺の物差し(1px あたりの km → 1・2・5 × 10 の何乗 km で 80〜200px) | `pickScaleBar` / `ScaleBarView` / `formatDistanceRound` | `src/stage/scaleBar.ts`・`scaleBarView.ts`・`src/lib/format.ts` |
 | 引きの眺めの垂線・足もとの輪・過ぎた名場面の刻み | `footOnEcliptic` / `passedSceneCount` / `GuideLines` | `src/stage/guide.ts`・`guideLines.ts` |
-| 確認用の URL(?t= ?view= ?look=)を状態に当てる | `applyUrlState` / `parseUrlState` | `src/lib/urlState.ts` |
+| 確認用の URL(?t= ?view= ?look=)と名場面の URL(?scene=)を状態に当てる | `applyUrlState` / `parseUrlState` | `src/lib/urlState.ts` |
+| 名場面へ移った・離れた時にアドレスバーを書き換える(replaceState)・URL の組み立て | `syncSceneUrl` / `withScene` / `sceneAtState` | `src/lib/urlState.ts` |
+| 「このサイトについて」の板(文言は `t().about` の見出し・段落・箇条書きの形。部品は並べるだけ。開く入口は `UiLayer`) | `AboutPanel`(Tab の閉じ込めは `focusTrapTarget`) | `src/ui/AboutPanel.svelte`・`src/ui/aboutFocus.ts` |
+| 画面の文言の一覧 `docs/texts.md` を辞書から作り直す(辞書にキーを足したら `PLACES` に「どこに出るか」を足す) | `node scripts/dump-texts.mjs`(`--check` で食い違いを調べる) | `scripts/dump-texts.mjs` |
 
 注意: 天体の位置を太陽中心どうしの引き算で作らない(通過の距離がずれる)。球は奥行きの判定を使わず、遠い順の `renderOrder` で描く。
