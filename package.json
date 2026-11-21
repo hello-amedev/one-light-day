@@ -12,7 +12,7 @@
     "preview": "vite preview",
     "check": "node scripts/check-conventions.mjs && node scripts/check-fonts.mjs && svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
-    "verify": "npm run check && npm test && npm run build && npm run check:budget",
+    "verify": "npm run fonts && npm run check && npm test && npm run build && npm run check:budget",
     "data:eph": "node tools/ephemeris/build.mjs",
     "data:stars": "node tools/stars/build.mjs",
     "data:textures": "node tools/textures/build.mjs",
