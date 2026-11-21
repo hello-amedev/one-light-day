@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { Ephemeris } from '../lib/ephemeris';
   import { formatDate, formatDistance, formatLightTime, formatSinceLaunch } from '../lib/format';
+  import { SCENES } from '../lib/scenes';
   import { t } from '../lib/i18n';
   import type { AppStore } from '../lib/store';
   import type { BodyScreenPoint, StageStats } from '../stage';
@@ -77,6 +78,9 @@
     view.state.playing && (view.state.rate === 'month' || view.state.rate === 'year' || introActive),
   );
   const distKm = $derived(eph.distance('voyager1', sunMode ? 'sun' : 'earth', view.state.et));
+  // 「地球から1光日」の前後 2 日だけ、光が届くまでの時間を秒まで出す(24時間0分0秒になる瞬間が見えるように)
+  const lightDayEt = SCENES.find((sc) => sc.id === 'lightday')?.et ?? Infinity;
+  const showLightSeconds = $derived(Math.abs(view.state.et - lightDayEt) <= 2 * 86400);
 
   // ── ?debug ──
   const debug = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
@@ -119,7 +123,7 @@
       rowOnPhone
       label={sunMode ? txt.fromSun : txt.fromEarth}
       value={formatDistance(distKm)}
-      sub={sunMode ? undefined : formatLightTime(distKm)}
+      sub={sunMode ? undefined : formatLightTime(distKm, showLightSeconds)}
       earth={!sunMode}
     />
   </div>
