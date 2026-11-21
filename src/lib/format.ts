@@ -109,3 +109,19 @@ export function formatLightDuration(seconds: number, withSeconds = false): strin
 export function formatLightTime(distanceKm: number, withSeconds = false): string {
   return t().hud.lightTime(formatLightDuration(distanceKm / C_KM_S, withSeconds));
 }
+
+/** 速さ km/s → 小数 1 桁の数(「13.2」)。単位は辞書の文に含める */
+export function formatSpeed(kmPerSecond: number): string {
+  return formatOneDecimal(kmPerSecond);
+}
+
+/** 出来事の日付(UTC)。月までしか分からないものは「2004年12月」、期間のあるものは「2023.11.14〜2024.06.13」、それ以外は「1998.02.17」 */
+export function formatEventDate(e: { et: number; precision: 'minute' | 'day' | 'month'; endEt?: number }): string {
+  const txt = t().timeline;
+  if (e.precision === 'month') {
+    const d = new Date(utcMsRounded(e.et));
+    return txt.month(String(d.getUTCFullYear()), String(d.getUTCMonth() + 1));
+  }
+  if (e.endEt !== undefined) return txt.period(formatDate(e.et), formatDate(e.endEt));
+  return formatDate(e.et);
+}
