@@ -2,6 +2,7 @@
 import { bodies } from './bodies';
 import { caption } from './caption';
 import { common } from './common';
+import { fallback } from './fallback';
 import { hud } from './hud';
 import { intro } from './intro';
 import { photo } from './photo';
@@ -12,6 +13,7 @@ export const ja = {
   bodies,
   caption,
   common,
+  fallback,
   hud,
   intro,
   photo,

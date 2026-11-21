@@ -1,5 +1,7 @@
 <script lang="ts">
+  import RollingNumber from './RollingNumber.svelte';
   // 数字のブロック(ラベル・大きい数字・補足)。右上の日付と右下の距離で共通。
+  // 大きい数字は、ゆっくり変わる時だけ桁が回って切り替わる(RollingNumber)。
   interface Props {
     label?: string;
     value: string;
@@ -15,7 +17,7 @@
 
 <div class="readout" class:end={align === 'end'} class:earth class:row-on-phone={rowOnPhone}>
   {#if label}<div class="label">{label}</div>{/if}
-  <div class="value">{value}</div>
+  <div class="value"><RollingNumber {value} /></div>
   <!-- 補足が出たり消えたりしても高さが変わらないよう、空でも 1 行ぶんを残す -->
   <div class="sub">{sub ?? ' '}</div>
 </div>
