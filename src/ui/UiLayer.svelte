@@ -350,7 +350,7 @@
     letter-spacing: var(--title-tracking, 0.22em);
     color: var(--color-text);
     text-shadow: var(--text-halo);
-    /* 題字は 1 行のまま(スマホの縦画面で右上のメニューのアイコンが増え、幅が足りず折れていた) */
+    /* 題字は 1 行のまま(スマホの縦画面で右の日付と並ぶため、幅が足りず折れないようにする) */
     white-space: nowrap;
   }
   .home {
