@@ -76,7 +76,8 @@ GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改
 4. 確認リストに、2026-11-22 の直し(SPEC.md の「文の見直し」「2 回目」「3 回目」)の確認項目を足し、あめさんに本番で見てもらう。そのあと「直したい」の項目を直す。2026-11-21 に直した 4 項目と足した 3 項目もあめさんの確認待ち。
    文言は辞書を直したら `node scripts/dump-texts.mjs` で一覧を作り直す。見え方は天の川の濃さが `--milkyway-gain`、太陽の光が `--sun-glare`、数字の大きさが `--text-readout`
 5. 直したら main に入れて、公開用のワークフローを動かす(`gh workflow run deploy.yml --repo hello-amedev/one-light-day --ref main`)。**Claude からの実行は自動の判定で止められることがある**ので、その時はあめさんにこのコマンドを渡す
-   **2026-11-22 に公開の最後の手順(deploy-pages)が 3 回、「github-pages の成果物が見つからない」で失敗した**(どれも `gh run rerun <番号> --failed` のやり直しで成功)。同じ日の使い方の案内の公開は 1 回で成功した。続くなら、.github/workflows/deploy.yml の upload-pages-artifact と deploy-pages の版の組み合わせを見直す
+   **公開の最後の手順(deploy-pages)が「github-pages の成果物が見つからない」で失敗することが 2026-11-22 に 5 回続いたので、作る段と公開する段に分けた**(GitHub の標準の形。分けた後は 1 回で成功)。
+   失敗した実行を `gh run rerun --failed` でやり直すと、成果物が 2 つになって別の失敗になる。やり直す時はワークフローを最初から動かす
 6. 告知の前に: 検索よけを外して公開し直す(docs/publish.md「告知の前に」)。サイト名を変える時は、辞書 `src/lib/i18n/ja/intro.ts`、`index.html` の題と説明、`tools/shots/shoot.mjs` の題字を直して `public/og.jpg` を撮り直す
 7. 地球の高精細の画像(8,192 画素)が取得できるようになったら差し替える(docs/assets/textures.md)
 8. 2026-11-14 からボイジャー1号のデータが届かず搬送波だけになっている件(NASA が調査中)を、サイトに載せるか決める。載せるなら SPEC.md の提案リストに書いてから(調べた内容は docs/events.md の末尾)
