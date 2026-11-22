@@ -32,6 +32,8 @@ GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改
 - **告知せずに公開した**(2026-11-21)。あめさんの方針は「すぐ外にリンクは出さず、本番の環境で最終調整する」。`index.html` に検索よけ(noindex)を入れてあり、告知の前に外す
 - **確認リスト**: https://claude.ai/artifact/J3m1UWXu4ZPYJgWnHnUesL(あめさんだけが見られる Artifact)。項目ごとに 未確認 / OK / 直したい とメモを、あめさんが書き込む。
   中身は Artifact の db の `checks` コレクション(ArtifactData の list で読む。項目を足す時は order を 10 刻みで、status は todo / ok / fix)。直したら status はあめさんに付け直してもらう
+- **文言の直しの画面**: https://claude.ai/artifact/HkZcCKmSzftQ6gvdrLRzn9(2026-11-22 に作成。あめさんだけが見られる)。辞書の文言 228 件を 1 件ずつ書き換え・コメントできる。
+  あめさんに「直して」と言われたら、[tools/text-review/README.md](tools/text-review/README.md) の手順で、依頼ありの項目を辞書に入れて返事を書く。辞書を別の作業で直した時も、同じ README の手順で画面の「今の文言」を合わせる
 - 星の数は約9千個のまま(あめさんの指定なし)。約4万個は `?stars=deep` で試せる
 
 - **第6段階(本番での確認を受けた見直し)は本番に反映済み(2026-11-21)。確認リストに第6段階の 9 項目を足し、あめさんの確認待ち**。中身は SPEC.md の「第6段階の仕様」1〜8、

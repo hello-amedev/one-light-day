@@ -1,0 +1,372 @@
+<title>ONE LIGHT-DAY 文言の直し</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Share+Tech+Mono&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+/* Layout: the same instrument-panel column as the checklist. Each area is a bracketed panel; each text is a row of
+   current text, an editable proposal and a comment. Deliberately dark only, to match the site. */
+:root {
+  color-scheme: dark;
+  --bg: #070a11;
+  --panel: #0d121c;
+  --well: #0a0e16;
+  --line: #1f2a3b;
+  --fg: #dfe6f0;
+  --muted: #8592a6;
+  --accent: #9fc4ff;
+  --ok: #7fd6a4;
+  --fix: #f2b36b;
+  --font-title: "Michroma", "Helvetica Neue", Arial, sans-serif;
+  --font-num: "Share Tech Mono", ui-monospace, Menlo, monospace;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+.wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.eyebrow { font-family: var(--font-title); font-size: 11px; letter-spacing: .14em; color: var(--muted); }
+h1 { font-family: var(--font-title); font-size: clamp(18px, 4.6vw, 24px); font-weight: 400; letter-spacing: .04em; margin: 0; text-wrap: balance; }
+.lead { color: var(--muted); margin: 0; max-width: 62ch; }
+.tally { display: flex; flex-wrap: wrap; gap: 8px 18px; font-family: var(--font-num); font-size: 14px; }
+.tally span b { font-weight: 400; font-size: 20px; margin-left: 4px; }
+.tally .t-asked b { color: var(--fix); }
+.tally .t-done b { color: var(--ok); }
+.state-note { font-size: 13px; color: var(--muted); min-height: 1.2em; margin: 0; }
+
+.tools { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.seg { display: inline-flex; border: 1px solid var(--line); }
+.seg button { background: transparent; color: var(--muted); border: 0; font: inherit; font-size: 13px; padding: 5px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--fg); }
+.search { flex: 1 1 180px; min-width: 0; background: var(--well); color: var(--fg); border: 1px solid var(--line); font: inherit; font-size: 14px; padding: 5px 10px; }
+.search::placeholder { color: var(--muted); opacity: .8; }
+
+#groups { display: flex; flex-direction: column; gap: 22px; }
+section.group { position: relative; background: var(--panel); border: 1px solid var(--line); padding: 18px 16px 6px; }
+section.group::before, section.group::after { content: ""; position: absolute; width: 10px; height: 10px; border-color: var(--accent); border-style: solid; opacity: .7; }
+section.group::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+section.group::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+h2 { font-size: 16px; margin: 0 0 4px; font-weight: 700; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+h2 .count { font-family: var(--font-num); font-weight: 400; font-size: 13px; color: var(--muted); }
+
+.item { border-top: 1px solid var(--line); padding: 14px 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.group h2 + .item { border-top: 0; }
+.item-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.key { font-family: var(--font-num); color: var(--muted); font-size: 13px; overflow-wrap: anywhere; min-width: 0; }
+.chip { font-size: 12px; padding: 0 8px; border: 1px solid currentColor; line-height: 1.6; }
+.chip.asked { color: var(--fix); }
+.chip.done { color: var(--ok); }
+.place { margin: 0; color: var(--muted); font-size: 13px; }
+.label { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.current { margin: 0; padding: 6px 10px; border-left: 2px solid var(--line); white-space: pre-wrap; overflow-wrap: anywhere; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.reset { background: transparent; border: 0; color: var(--accent); font: inherit; font-size: 12px; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+textarea { width: 100%; resize: vertical; background: var(--well); color: var(--fg); border: 1px solid var(--line); font: inherit; font-size: 15px; line-height: 1.6; padding: 6px 10px; field-sizing: content; min-height: 2.4em; }
+textarea.changed { border-color: color-mix(in srgb, var(--fix) 70%, var(--line)); }
+textarea.note { font-size: 14px; }
+textarea::placeholder { color: var(--muted); opacity: .7; }
+textarea:disabled { opacity: .6; }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+.reply { margin: 0; padding: 8px 10px; background: color-mix(in srgb, var(--ok) 8%, transparent); border-left: 2px solid var(--ok); font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.reply .label { display: block; color: var(--ok); }
+.saved { font-size: 12px; color: var(--muted); min-height: 1em; font-family: var(--font-num); }
+.empty { color: var(--muted); border: 1px dashed var(--line); padding: 18px; }
+footer { color: var(--muted); font-size: 13px; }
+button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">ONE LIGHT-DAY / TEXTS</div>
+    <h1>文言の直し</h1>
+    <p class="lead">サイトに出る文言の一覧です。直したい文は編集欄を書き換え、決めきれない時はコメントで指示してください。Claude が辞書に入れると「反映済み」になり、今の文言が新しい文に変わります。ここで書き換えただけでは、サイトは変わりません。</p>
+    <div class="tally" id="tally" aria-live="polite"></div>
+    <p class="state-note" id="state-note">読み込んでいます…</p>
+  </header>
+
+  <div class="tools">
+    <div class="seg" role="group" aria-label="表示する項目">
+      <button type="button" id="f-all" data-f="all" aria-pressed="true">すべて</button>
+      <button type="button" id="f-asked" data-f="asked" aria-pressed="false">依頼あり</button>
+      <button type="button" id="f-done" data-f="done" aria-pressed="false">反映済み</button>
+    </div>
+    <input class="search" id="search" type="search" placeholder="文言・場所で探す" aria-label="文言・場所で探す">
+  </div>
+
+  <main id="groups"><div class="empty">読み込んでいます…</div></main>
+  <footer>入力は、手を止めて少しすると自動で保存されます。この一覧はあめさんだけが見られます。</footer>
+</div>
+
+<script>
+const groupsEl = document.getElementById("groups");
+const tallyEl = document.getElementById("tally");
+const noteEl = document.getElementById("state-note");
+const searchEl = document.getElementById("search");
+
+let db = null;
+let canWrite = true;
+let items = [];
+let filter = "all";
+let built = false;
+const views = new Map();   // id -> { el, chip, current, draft, note, reply, saved, reset }
+const sections = new Map(); // area -> { el, count }
+const timers = new Map();
+const busy = new Map();
+
+const isAsked = it => it.state === "asked";
+const isDone = it => it.state === "done";
+
+function renderTally() {
+  const asked = items.filter(isAsked).length;
+  const done = items.filter(isDone).length;
+  tallyEl.innerHTML = "";
+  [["t-asked", "依頼あり", asked], ["t-done", "反映済み", done], ["", "全件", items.length]].forEach(([cls, label, n]) => {
+    const s = document.createElement("span");
+    if (cls) s.className = cls;
+    s.textContent = label;
+    const b = document.createElement("b");
+    b.textContent = n;
+    s.appendChild(b);
+    tallyEl.appendChild(s);
+  });
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function buildItem(it) {
+  const wrap = el("div", "item");
+  const head = el("div", "item-head");
+  const key = el("span", "key", it.key);
+  const chip = el("span", "chip");
+  head.append(key, chip);
+  const place = el("p", "place", it.place ? "どこに出るか：" + it.place : "");
+  place.hidden = !it.place;
+
+  const curBox = el("div", "field");
+  curBox.append(el("span", "label", "今の文言"));
+  const current = el("p", "current");
+  curBox.appendChild(current);
+
+  const draftBox = el("div", "field");
+  const dh = el("div", "field-head");
+  const dl = el("label", "label", "直したい文");
+  dl.htmlFor = "draft-" + it.id;
+  const reset = el("button", "reset", "今の文言に戻す");
+  reset.type = "button";
+  dh.append(dl, reset);
+  const draft = el("textarea");
+  draft.id = "draft-" + it.id;
+  draft.rows = 1;
+  draftBox.append(dh, draft);
+  if (it.template) draftBox.appendChild(el("p", "hint", "{ } の中は例の値で、画面では入れ替わります。{ } の所は残してください。"));
+
+  const noteBox = el("div", "field");
+  const nl = el("label", "label", "コメント・指示");
+  nl.htmlFor = "note-" + it.id;
+  const note = el("textarea", "note");
+  note.id = "note-" + it.id;
+  note.rows = 1;
+  note.placeholder = "例：もっと短く。言い切りの形に。";
+  noteBox.append(nl, note);
+
+  const reply = el("p", "reply");
+  const saved = el("div", "saved");
+  saved.setAttribute("aria-live", "polite");
+  wrap.append(head, place, curBox, draftBox, noteBox, reply, saved);
+
+  const v = { el: wrap, chip, current, draft, note, reply, saved, reset };
+  draft.addEventListener("input", () => { markDraft(it.id); queue(it.id); });
+  note.addEventListener("input", () => queue(it.id));
+  [draft, note].forEach(t => t.addEventListener("blur", () => flush(it.id)));
+  reset.addEventListener("click", () => {
+    const cur = items.find(x => x.id === it.id);
+    draft.value = cur ? cur.current : "";
+    markDraft(it.id);
+    flush(it.id, true);
+  });
+  views.set(it.id, v);
+  return wrap;
+}
+
+function markDraft(id) {
+  const it = items.find(x => x.id === id);
+  const v = views.get(id);
+  if (!it || !v) return;
+  const changed = v.draft.value !== it.current;
+  v.draft.classList.toggle("changed", changed);
+  v.reset.hidden = !changed;
+}
+
+function fill(it) {
+  const v = views.get(it.id);
+  v.current.textContent = it.current;
+  const active = document.activeElement;
+  if (active !== v.draft && !timers.has(it.id)) v.draft.value = it.draft ? it.draft : it.current;
+  if (active !== v.note && !timers.has(it.id)) v.note.value = it.note || "";
+  // field-sizing の効かないブラウザ向けに、長い文は最初から数行ぶん広げておく
+  v.draft.rows = Math.min(8, Math.max(1, Math.ceil(v.draft.value.length / 36)));
+  v.note.rows = Math.min(6, Math.max(1, Math.ceil(v.note.value.length / 40)));
+  v.draft.disabled = v.note.disabled = !canWrite;
+  v.reset.disabled = !canWrite;
+  markDraft(it.id);
+  v.chip.className = "chip " + (it.state || "");
+  v.chip.textContent = isAsked(it) ? "依頼あり" : isDone(it) ? "反映済み" : "";
+  v.chip.hidden = !isAsked(it) && !isDone(it);
+  v.reply.innerHTML = "";
+  if (it.reply) {
+    v.reply.append(el("span", "label", "Claude から"), document.createTextNode(it.reply));
+  }
+  v.reply.hidden = !it.reply;
+}
+
+function build() {
+  groupsEl.innerHTML = "";
+  views.clear();
+  sections.clear();
+  if (!items.length) {
+    groupsEl.appendChild(el("div", "empty", "まだ文言が入っていません。Claude がサイトの辞書から文言を入れると、ここに並びます。"));
+    built = false;
+    return;
+  }
+  items.forEach(it => {
+    let s = sections.get(it.area);
+    if (!s) {
+      const sec = el("section", "group");
+      const h = el("h2", null, it.areaTitle || it.area);
+      const count = el("span", "count");
+      h.appendChild(count);
+      sec.appendChild(h);
+      groupsEl.appendChild(sec);
+      s = { el: sec, count };
+      sections.set(it.area, s);
+    }
+    s.el.appendChild(buildItem(it));
+  });
+  built = true;
+}
+
+function sameShape() {
+  if (!built || views.size !== items.length) return false;
+  return items.every(it => views.has(it.id));
+}
+
+function render() {
+  renderTally();
+  if (!sameShape()) build();
+  if (!built) return;
+  items.forEach(fill);
+  applyFilter();
+}
+
+function applyFilter() {
+  const q = searchEl.value.trim().toLowerCase();
+  const shown = new Map();
+  items.forEach(it => {
+    const v = views.get(it.id);
+    let ok = filter === "all" || (filter === "asked" ? isAsked(it) : isDone(it));
+    if (ok && q) {
+      const hay = [it.key, it.place, it.current, it.draft, it.note, it.reply].join("\n").toLowerCase();
+      ok = hay.includes(q);
+    }
+    v.el.hidden = !ok;
+    if (ok) shown.set(it.area, (shown.get(it.area) || 0) + 1);
+  });
+  sections.forEach((s, area) => {
+    const n = shown.get(area) || 0;
+    const total = items.filter(it => it.area === area).length;
+    s.el.hidden = n === 0;
+    s.count.textContent = n === total ? total + " 件" : n + " / " + total + " 件";
+  });
+  let none = groupsEl.querySelector(".none");
+  const any = shown.size > 0;
+  if (!any && !none) { none = el("div", "empty none", "当てはまる文言はありません。"); groupsEl.appendChild(none); }
+  if (none) none.hidden = any;
+}
+
+function queue(id) {
+  const v = views.get(id);
+  v.saved.textContent = "";
+  clearTimeout(timers.get(id));
+  timers.set(id, setTimeout(() => flush(id), 900));
+}
+
+async function flush(id, force) {
+  if (!timers.has(id) && !force) return;
+  clearTimeout(timers.get(id));
+  timers.delete(id);
+  const it = items.find(x => x.id === id);
+  const v = views.get(id);
+  if (!it || !v) return;
+  const draft = v.draft.value === it.current ? "" : v.draft.value;
+  const note = v.note.value.trim() ? v.note.value : "";
+  if (draft === (it.draft || "") && note === (it.note || "")) return;
+  const patch = { draft, note };
+  if (draft || note) patch.state = "asked";
+  else if (it.state === "asked") patch.state = "";
+  const ok = await write(id, patch);
+  if (ok) v.saved.textContent = "保存しました";
+}
+
+async function write(id, patch) {
+  if (!db) return false;
+  while (busy.get(id)) await busy.get(id);
+  const p = db.collection("texts").doc(id).update(patch);
+  busy.set(id, p.catch(() => {}));
+  try { await p; noteEl.textContent = ""; return true; }
+  catch (e) {
+    if (e && (e.code === "invalid_argument" || e.code === "permission_denied")) {
+      canWrite = false;
+      noteEl.textContent = "この一覧は見るだけになっています。";
+      render();
+    } else {
+      noteEl.textContent = "保存できませんでした。通信を確かめて、もう一度入力してください。";
+    }
+    return false;
+  } finally { busy.delete(id); }
+}
+
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.f;
+  document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  if (built) applyFilter();
+}));
+searchEl.addEventListener("input", () => { if (built) applyFilter(); });
+
+(async () => {
+  db = await claude.use("db");
+  if (!db) {
+    noteEl.textContent = "この画面では一覧を読み込めません。claude.ai にサインインして開き直してください。";
+    groupsEl.innerHTML = "";
+    groupsEl.appendChild(el("div", "empty", "一覧を読み込めませんでした。"));
+    return;
+  }
+  const timer = setTimeout(() => { noteEl.textContent = "一覧にまだつながりません。通信を確かめてください。"; }, 10000);
+  db.collection("texts").orderBy("order").onSnapshot(snap => {
+    if (!snap.metadata.fromCache) { clearTimeout(timer); noteEl.textContent = ""; }
+    items = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    render();
+  }, () => {
+    clearTimeout(timer);
+    noteEl.textContent = "一覧の読み込みが止まりました。ページを開き直してください。";
+  });
+})();
+</script>

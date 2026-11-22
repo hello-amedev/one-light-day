@@ -1,6 +1,7 @@
 // 画面に出る文言の一覧(docs/texts.md)を、辞書(src/lib/i18n/ja/)から作り直す。
 //   node scripts/dump-texts.mjs          docs/texts.md を書き出す
 //   node scripts/dump-texts.mjs --check  今の辞書と docs/texts.md が合っているかだけ調べる(合わなければ失敗)
+//   node scripts/dump-texts.mjs --json <出力先>  文言の直しの画面(Artifact)に入れるデータを JSON で書き出す(docs/texts.md は書かない)
 //
 // なぜあるか: 依頼主が公開の前に、画面の文言をまとめて確認できるようにするため。手で写すとずれるので、辞書から作る。
 // 辞書にキーを足した時は、下の PLACES に「どこに出るか」を足す(足さないと止まる)。値の入る文の例は EXAMPLES に足す。
@@ -162,7 +163,8 @@ function* rows(value, path, problems) {
       problems.push(`${path}: 値の入る文の例が EXAMPLES にありません`);
       return;
     }
-    yield { path, text: value(...args), example: args };
+    // 文言の直しの画面では、入れ替わる所を { } で囲んだ例の値で見せる
+    yield { path, text: value(...args), example: args, template: value(...args.map((a) => `{${a}}`)) };
   } else if (Array.isArray(value)) {
     for (let i = 0; i < value.length; i++) yield* rows(value[i], `${path}[${i}]`, problems);
   } else if (value && typeof value === 'object') {
@@ -198,9 +200,53 @@ function aboutSections(about, problems) {
   return lines.join('\n');
 }
 
+/** 「このサイトについて」の節の中身を、直しの画面の 1 件ずつに開く */
+function aboutItems(about) {
+  const out = [];
+  about.sections.forEach((s, i) => {
+    const at = `「このサイトについて」${i + 1} 節（${s.heading}）`;
+    const base = `about.sections[${i}]`;
+    out.push({ path: `${base}.heading`, text: s.heading, place: `${at}の見出し` });
+    s.blocks.forEach((b, j) => {
+      const bp = `${base}.blocks[${j}]`;
+      if (b.kind === 'p') out.push({ path: `${bp}.text`, text: b.text, place: `${at}の段落` });
+      else if (b.kind === 'sub') out.push({ path: `${bp}.text`, text: b.text, place: `${at}の小見出し` });
+      else if (b.kind === 'list')
+        b.items.forEach((x, k) => out.push({ path: `${bp}.items[${k}]`, text: x, place: `${at}の箇条書き` }));
+      else if (b.kind === 'terms')
+        b.items.forEach((x, k) => {
+          out.push({ path: `${bp}.items[${k}].term`, text: x.term, place: `${at}の項目名` });
+          out.push({ path: `${bp}.items[${k}].text`, text: x.text, place: `${at}の項目「${x.term}」の説明` });
+        });
+      else if (b.kind === 'credits')
+        b.items.forEach((x, k) => {
+          for (const f of ['use', 'name', 'license', 'note']) {
+            if (!x[f]) continue;
+            const what = { use: '何に使ったか', name: '出典の名前', license: '条件の名前', note: '補足' }[f];
+            out.push({ path: `${bp}.items[${k}].${f}`, text: x[f], place: `${at}の出典「${x.name}」の${what}` });
+          }
+        });
+    });
+  });
+  return out;
+}
+
 const server = await createServer({ root, configFile: false, logLevel: 'error', server: { middlewareMode: true }, appType: 'custom' });
 let md;
 const problems = [];
+/** 文言の直しの画面に入れる 1 件ずつ */
+const items = [];
+const addItem = (areaId, areaTitle, r, place) =>
+  items.push({
+    id: r.path.replace(/\[(\d+)\]/g, '-$1').replace(/\./g, '-'),
+    order: (items.length + 1) * 10,
+    key: r.path,
+    area: areaId,
+    areaTitle,
+    place: place ?? '',
+    current: r.template ?? r.text,
+    template: Boolean(r.template),
+  });
 try {
   const { ja } = await server.ssrLoadModule('/src/lib/i18n/ja/index.ts');
   const keys = Object.keys(ja);
@@ -223,6 +269,9 @@ try {
     parts.push(`## ${title}`, '', note, '');
     if (id === 'about') {
       parts.push('| キー | 文言 | どこに出るか |', '|---|---|---|', aboutSections(area, problems));
+      for (const k of ['entry', 'kicker', 'title', 'close'])
+        addItem(id, title, { path: `about.${k}`, text: area[k] }, placeFor(`about.${k}`));
+      for (const r of aboutItems(area)) addItem(id, title, r, r.place);
       continue;
     }
     parts.push('| キー | 文言 | どこに出るか |', '|---|---|---|');
@@ -230,6 +279,7 @@ try {
       const place = placeFor(r.path);
       if (!place) problems.push(`${r.path}: 「どこに出るか」が PLACES にありません`);
       parts.push(`| ${r.path} | ${cell(r.text)} | ${cell(place ?? '')}${r.example ? `（例の値：${cell(r.example.join('、'))}）` : ''} |`);
+      addItem(id, title, r, place);
     }
     parts.push('');
   }
@@ -243,7 +293,21 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-if (process.argv.includes('--check')) {
+const jsonAt = process.argv.indexOf('--json');
+if (jsonAt !== -1) {
+  const out = process.argv[jsonAt + 1];
+  if (!out) {
+    console.error('--json の後に出力先のファイルを書いてください');
+    process.exit(1);
+  }
+  const ids = new Set(items.map((x) => x.id));
+  if (ids.size !== items.length) {
+    console.error('直しの画面の id が重なっています');
+    process.exit(1);
+  }
+  writeFileSync(out, JSON.stringify(items, null, 2) + '\n');
+  console.log(`${out} に ${items.length} 件を書き出しました`);
+} else if (process.argv.includes('--check')) {
   let current = '';
   try {
     current = readFileSync(outPath, 'utf8');
