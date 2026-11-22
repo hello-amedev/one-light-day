@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { applyMat3, craftOpacity, craftOrientation, DISH_DIAMETER_M, modelUnitKm } from '../../src/stage/craftMath';
+import {
+  applyMat3,
+  beaconHandoff,
+  craftOpacity,
+  craftOrientation,
+  craftScreenPx,
+  DISH_DIAMETER_M,
+  modelUnitKm,
+} from '../../src/stage/craftMath';
 import { CraftView } from '../../src/stage/craft';
 import type { Ephemeris } from '../../src/lib/ephemeris';
 import { dot, length, type Vec3 } from '../../src/stage/math';
@@ -61,6 +69,31 @@ describe('機体の見え方', () => {
   });
   it('視点を出ていく間(ramp = 0)は消える', () => {
     expect(craftOpacity(0, 1e9)).toBe(0);
+  });
+});
+
+describe('光点と機体の入れ替え(全体を俯瞰 ↔ 本体の視点)', () => {
+  // 画面の高さ 900px、縦の視野 52 度
+  const px = (km: number) => craftScreenPx(km, 900, Math.tan((26 * Math.PI) / 180));
+  it('皿の画面上の大きさは、距離に反比例する', () => {
+    expect(px(0.1)).toBeCloseTo(px(1) * 10, 6);
+    expect(px(0)).toBe(Infinity);
+  });
+  it('遠くで機体が小さい間は、光点だけ(機体は描かない)', () => {
+    const far = px(1000);
+    expect(beaconHandoff(far)).toBe(1);
+    expect(craftOpacity(1, 1000, far)).toBe(0);
+  });
+  it('機体が光点と同じくらいの大きさの間は、両方が重なって見える(途中で何も映らない間がない)', () => {
+    for (const p of [5, 5.5, 6]) {
+      expect(beaconHandoff(p)).toBeGreaterThan(0);
+      expect(craftOpacity(1, 1, p)).toBeGreaterThan(0);
+    }
+  });
+  it('本体の視点の距離(20 m)では、光点は消えて機体だけ', () => {
+    const near = px(0.02);
+    expect(beaconHandoff(near)).toBe(0);
+    expect(craftOpacity(1, 0.02, near)).toBe(1);
   });
 });
 

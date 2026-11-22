@@ -337,7 +337,7 @@ export function createStage(options: StageOptions): Stage {
     streaks.classify(deltaEt);
     // 「星空だけを表示」の間は残像の弧を出さず、惑星は点で描く
     const streakOn = lineFade > 0.001;
-    const infos = bodies.update(frameCtx, streakOn ? streaks.active : undefined);
+    const infos = bodies.update(frameCtx, streakOn ? streaks.active : undefined, state.view === 'craft' || rig.retreatingFromCraft);
     streaks.update(frameCtx, cameraSun, deltaEt, infos, chrome, lineFade);
     orbits.update(frameCtx, cameraSun, chrome, streakOn ? streaks.glow : undefined, orbitFade);
     // 軌跡は引きの眺めだけ(ボイジャーの視界と本体の視点では足もとから延びる線が手前で切れる)

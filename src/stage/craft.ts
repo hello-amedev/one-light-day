@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import type { Ephemeris } from '../lib/ephemeris';
 import type { CameraPose } from './camera';
-import { craftOpacity, craftOrientation, modelUnitKm, type Mat3 } from './craftMath';
+import { craftOpacity, craftOrientation, craftScreenPx, modelUnitKm, type Mat3 } from './craftMath';
 import type { FrameContext } from './frame';
 import { DEG, clamp, cross, normalize, scale, type Vec3 } from './math';
 
@@ -20,9 +20,10 @@ export interface CraftViewOptions {
 const EL_LIMIT = 80 * DEG;
 /** 視点に入る・出る時に、機体が現れる・消える時間(秒) */
 const FADE_SECONDS = 0.6;
-/** 機体の場面のカメラの手前・奥の限度(km)。機体は数 m〜十数 m */
+/** 機体の場面のカメラの手前の最小(km)。奥は、機体までの距離に合わせて毎回決める(遠くから寄る間も描けるように) */
 const NEAR_KM = 0.0002;
-const FAR_KM = 0.5;
+/** 機体の広がり(km)。磁力計の長い腕も入る大きさ。手前・奥の限度は、機体までの距離 ± この値 */
+const CRAFT_EXTENT_KM = 0.02;
 
 // モデルの形から決めた値(docs/assets/craft.md)。単位はモデルの座標
 const MODEL_URL = 'models/voyager.glb';
@@ -46,7 +47,7 @@ export class CraftView {
   private loaded = false;
   private disposed = false;
   private scene = new THREE.Scene();
-  private cam = new THREE.PerspectiveCamera(50, 1, NEAR_KM, FAR_KM);
+  private cam = new THREE.PerspectiveCamera(50, 1, NEAR_KM, CRAFT_EXTENT_KM * 2);
   /** モデルを入れる枠。位置 = 機体の位置(カメラ相対)、向き = 地球へ向けた回転、大きさ = km への縮め */
   private pivot = new THREE.Group();
   private sun = new THREE.DirectionalLight(0xfff4e6, 3.6);
@@ -161,7 +162,7 @@ export class CraftView {
     if (!this.loaded) return;
 
     const off = Math.hypot(frame.offset[0], frame.offset[1], frame.offset[2]);
-    const alpha = craftOpacity(this.ramp * this.ramp * (3 - 2 * this.ramp), off);
+    const alpha = craftOpacity(this.ramp * this.ramp * (3 - 2 * this.ramp), off, craftScreenPx(off, frame.height, frame.tanV));
     if (alpha <= 0.002) return;
 
     // 向き: 皿の軸を地球へ。光: 太陽の方向から。時刻が変わった時だけ求め直す
@@ -196,9 +197,14 @@ export class CraftView {
     }
 
     const cam = this.cam;
-    if (cam.fov !== camera.fov || cam.aspect !== camera.aspect) {
+    // 手前・奥は機体の前後だけにする(遠くから寄る間も、奥行きの精度を落とさずに描ける)
+    const near = Math.max(NEAR_KM, off - CRAFT_EXTENT_KM);
+    const far = off + CRAFT_EXTENT_KM;
+    if (cam.fov !== camera.fov || cam.aspect !== camera.aspect || cam.near !== near || cam.far !== far) {
       cam.fov = camera.fov;
       cam.aspect = camera.aspect;
+      cam.near = near;
+      cam.far = far;
       cam.updateProjectionMatrix();
     }
     cam.quaternion.copy(camera.quaternion);

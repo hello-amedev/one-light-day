@@ -25,6 +25,7 @@ import { bodyToEcliptic, EQUATORIAL_RADIUS_KM, FLATTENING, ROTATION, toBodyFrame
 import { SurfaceTextures } from './surfaceTextures';
 import type { Theme } from './theme';
 import { sunGlowSizes } from './zoomView';
+import { beaconHandoff, craftScreenPx } from './craftMath';
 import { makeBeaconTexture, makeCoreTexture, makeDotTexture, makeGlowTexture, makeSpikeTexture } from './textures';
 import { moonlight } from './moonlight';
 
@@ -155,6 +156,8 @@ export interface BodyScreenInfo {
   /** 画面上の半径(px) */
   radiusPx: number;
   distance: number;
+  /** 目印と名前の濃さ(0〜1。省略は 1)。ボイジャーの光点が本体に入れ替わる間だけ使う */
+  opacity?: number;
 }
 
 type U<T> = { value: T };
@@ -482,7 +485,8 @@ export class Bodies {
   }
 
   /** 位置を更新し、目印の層に渡す画面の情報を返す。streaking は、点の代わりに弧で描く惑星 */
-  update(ctx: FrameContext, streaking?: ReadonlySet<BodyId>): BodyScreenInfo[] {
+  /** craftNear: 本体の視点にいる・本体へ寄る・本体から引く間。ボイジャーの光点を、機体の画面上の大きさに合わせて本体と入れ替える */
+  update(ctx: FrameContext, streaking?: ReadonlySet<BodyId>, craftNear = false): BodyScreenInfo[] {
     const eph = this.eph;
     const et = ctx.et;
     const nowMs = performance.now();
@@ -561,13 +565,16 @@ export class Bodies {
     // ボイジャー自身(引きの眺めで、カメラが離れている時)
     const vRel: Vec3 = [-ctx.offset[0], -ctx.offset[1], -ctx.offset[2]];
     const vd = length(vRel);
-    const showVoyager = vd > VOYAGER_MARK_MIN_KM;
+    // 本体のそばでは、機体が光点と同じくらいに育つまで光点を残し、重ねて入れ替える。それ以外(ボイジャーの視界との行き来)は今までどおり 10 万 km で消す
+    const beacon = craftNear ? beaconHandoff(craftScreenPx(vd, ctx.height, ctx.tanV)) : vd > VOYAGER_MARK_MIN_KM ? 1 : 0;
+    const showVoyager = beacon > 0.01;
     this.voyagerDot.visible = showVoyager;
     if (showVoyager) {
       const p = shellPlacement(vRel, 1);
       this.voyagerDot.position.set(p.position[0], p.position[1], p.position[2]);
       this.voyagerDot.scale.setScalar(VOYAGER_BEACON_PX * kmPerPx);
-      infos.push({ id: 'voyager1', screen: projectToScreen(vRel, ctx), radiusPx: 0, distance: vd });
+      (this.voyagerDot.material as THREE.SpriteMaterial).opacity = beacon;
+      infos.push({ id: 'voyager1', screen: projectToScreen(vRel, ctx), radiusPx: 0, distance: vd, opacity: beacon });
     }
     return infos;
   }

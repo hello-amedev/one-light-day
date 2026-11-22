@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AU_KM } from '../../src/lib/ephemeris/types';
 import { etFromIso } from '../../src/lib/ephemeris/time';
-import { approachPose, overviewDistance, overviewPose, blendPose } from '../../src/stage/camera';
+import { approachLength, approachPose, overviewDistance, overviewPose, blendPose } from '../../src/stage/camera';
 import { BODY_RADIUS_KM, PLANET_IDS } from '../../src/lib/bodies';
 import { angleBetween, azElFromDir, dirFromAzEl, length, DEG, type Vec3 } from '../../src/stage/math';
 import { relativePosition, shellPlacement } from '../../src/stage/placement';
@@ -141,5 +141,31 @@ describe('引きの眺めから本体の視点へ寄る動き', () => {
       const p = approachPose(from, to, s);
       expect(length([p.offset[0] - from.offset[0], p.offset[1] - from.offset[1], p.offset[2] - from.offset[2]])).toBeLessThan(1e-6);
     }
+  });
+});
+
+describe('本体の視点へ寄る間の距離の進み方', () => {
+  const l0 = 5e9;
+  const l1 = 0.02;
+  it('始めと終わりは、引きの眺めと本体の視点の距離', () => {
+    expect(approachLength(l0, l1, 0)).toBeCloseTo(l0, -3);
+    expect(approachLength(l0, l1, 1)).toBeCloseTo(l1, 9);
+  });
+  it('途中で遠ざかることがない', () => {
+    let prev = Infinity;
+    for (let i = 0; i <= 200; i++) {
+      const d = approachLength(l0, l1, i / 200);
+      expect(d).toBeLessThanOrEqual(prev * (1 + 1e-9));
+      prev = d;
+    }
+  });
+  it('光点が本体に入れ替わる区間(機体から 0.2〜2 km)に、進みの 1 割以上をかける', () => {
+    let inRange = 0;
+    const n = 2000;
+    for (let i = 0; i <= n; i++) {
+      const d = approachLength(l0, l1, i / n);
+      if (d >= 0.2 && d <= 2) inRange++;
+    }
+    expect(inRange / n).toBeGreaterThan(0.1);
   });
 });

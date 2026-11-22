@@ -200,6 +200,8 @@ interface Marker {
   labelW: number;
   /** 前のコマで名前を置いた側 */
   side: LabelSide | null;
+  /** 目印と名前の濃さ(ボイジャーの光点が本体に入れ替わる間だけ 1 未満) */
+  opacity: number;
 }
 
 export class MarkerLayer {
@@ -261,7 +263,7 @@ export class MarkerLayer {
     }
     root.append(svg, label);
     this.overlay.appendChild(root);
-    return { root, svg, label, visible: false, color: '', ringPx: -1, labelKey: '', labelW: name.length * CHAR_PX, side: null };
+    return { root, svg, label, visible: false, color: '', ringPx: -1, labelKey: '', labelW: name.length * CHAR_PX, side: null, opacity: 1 };
   }
 
   /** 位置データが通過の前後だけにある衛星の画面の情報(bodies が出していない天体だけ) */
@@ -363,6 +365,11 @@ export class MarkerLayer {
       if (color !== m.color) {
         m.root.style.color = color;
         m.color = color;
+      }
+      const opacity = info.opacity ?? 1;
+      if (opacity !== m.opacity) {
+        m.root.style.opacity = opacity < 1 ? opacity.toFixed(3) : '';
+        m.opacity = opacity;
       }
 
       // 輪の大きさ: 小さな点には最小の輪、円盤が見える時は円盤を囲む。大きい円盤は輪なし

@@ -58,9 +58,28 @@ export function smooth01(a: number, b: number, x: number): number {
 }
 
 /**
- * 機体の見え方(0〜1)。timeRamp は視点に入る・出る時間のなめらかな変化、
- * offsetKm はボイジャーからカメラまでのずれ(km)。機体のすぐそば(ボイジャーの視界)では描かない
+ * 光点と機体の入れ替え(全体を俯瞰 ↔ 本体の視点)。機体の皿の画面上の大きさ(px)で決める。
+ * 機体が光点より小さい間は光点だけ、光点と同じくらいに育つ間に重ねて入れ替える(遠くでいきなり消えて、近くでふっと出るのを防ぐ)
  */
-export function craftOpacity(timeRamp: number, offsetKm: number): number {
-  return timeRamp * smooth01(0.002, 0.012, offsetKm);
+export const HANDOFF_MODEL_PX: readonly [number, number] = [1.5, 6];
+export const HANDOFF_BEACON_PX: readonly [number, number] = [5, 16];
+
+/** 皿の直径が画面で何 px に見えるか。offsetKm はカメラから機体までの距離、heightPx と tanV は画面の高さと縦の視野の半分の tan */
+export function craftScreenPx(offsetKm: number, heightPx: number, tanV: number): number {
+  if (!(offsetKm > 0)) return Infinity;
+  return (DISH_DIAMETER_M / 1000 / offsetKm) * (heightPx / (2 * tanV));
+}
+
+/** 光点の濃さ(0〜1)。機体が育つほど薄くなる */
+export function beaconHandoff(craftPx: number): number {
+  return 1 - smooth01(HANDOFF_BEACON_PX[0], HANDOFF_BEACON_PX[1], craftPx);
+}
+
+/**
+ * 機体の見え方(0〜1)。timeRamp は視点に入る・出る時間のなめらかな変化、
+ * offsetKm はボイジャーからカメラまでのずれ(km)。機体のすぐそば(ボイジャーの視界)では描かない。
+ * craftPx は皿の画面上の大きさ(px)。遠くで小さい間は光点に任せて描かない
+ */
+export function craftOpacity(timeRamp: number, offsetKm: number, craftPx: number = Infinity): number {
+  return timeRamp * smooth01(0.002, 0.012, offsetKm) * smooth01(HANDOFF_MODEL_PX[0], HANDOFF_MODEL_PX[1], craftPx);
 }

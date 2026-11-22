@@ -31,11 +31,53 @@ export const LOOK_RELEASE_SECONDS = 1.5;
 /** 視点を切り替える時間(秒) */
 export const VIEW_SECONDS = 1.6;
 /** 引きの眺めと本体の視点の間の切り替え(向き直る・寄る・回り込む)の時間(秒) */
-export const CRAFT_VIEW_SECONDS = 2.8;
+export const CRAFT_VIEW_SECONDS = 3.2;
 /** 本体の視点へ寄る動きのうち、最初にボイジャーへ向き直る割合 */
 const APPROACH_TURN = 0.25;
 /** 寄る動きのうち、機体のまわりを回り込み始める所(寄る部分の中の割合) */
 const APPROACH_ORBIT_FROM = 0.7;
+
+/**
+ * 寄る・引く間の距離の進み方。距離の桁(log10)ごとに同じ速さで進むと、ボイジャーの光点が本体に入れ替わる
+ * 区間(機体から数百 m〜2 km ほど。craftMath の HANDOFF_*)が一瞬で過ぎる。その区間の桁にだけ時間を多く配る。
+ * 重みは、本体の視点の距離から HANDOFF_CENTER 桁上を中心に、幅 HANDOFF_WIDTH 桁の山(高さ HANDOFF_WEIGHT)
+ */
+const HANDOFF_WEIGHT = 6;
+const HANDOFF_CENTER = 1.4;
+const HANDOFF_WIDTH = 0.7;
+
+/** 誤差関数の近似(Abramowitz-Stegun 7.1.26。誤差 1.5e-7) */
+function erf(x: number): number {
+  const s = Math.sign(x);
+  const a = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * a);
+  const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a);
+  return s * y;
+}
+
+/** 本体の視点の距離から x 桁上までの「進み方の長さ」(重みの積分) */
+function handoffWeighted(x: number): number {
+  const k = (HANDOFF_WEIGHT * HANDOFF_WIDTH * Math.sqrt(Math.PI)) / 2;
+  return x + k * (erf((x - HANDOFF_CENTER) / HANDOFF_WIDTH) - erf(-HANDOFF_CENTER / HANDOFF_WIDTH));
+}
+
+/**
+ * 寄る途中の距離。l0 から l1 へ、e(0〜1。緩急をつけた進み)に合わせて、入れ替わりの区間をゆっくり通る。
+ * l1 より遠い所から寄る時だけ使う(l0 <= l1 の時は桁で等分)
+ */
+export function approachLength(l0: number, l1: number, e: number): number {
+  const total = Math.log10(l0 / l1);
+  if (!(total > 0)) return Math.exp(lerp(Math.log(l0), Math.log(l1), e));
+  const target = handoffWeighted(total) * (1 - e);
+  let lo = 0;
+  let hi = total;
+  for (let i = 0; i < 48; i++) {
+    const mid = (lo + hi) / 2;
+    if (handoffWeighted(mid) < target) lo = mid;
+    else hi = mid;
+  }
+  return l1 * Math.pow(10, (lo + hi) / 2);
+}
 
 export const OVERVIEW_FOV = 45;
 /** 引きの眺めの既定の向き */
@@ -122,7 +164,7 @@ export function approachPose(from: CameraPose, to: CameraPose, s: number): Camer
     return { offset: [...from.offset], forward: slerp(from.forward, aim, easeInOut(s / APPROACH_TURN)), fov: from.fov };
   }
   const u = (s - APPROACH_TURN) / (1 - APPROACH_TURN);
-  const len = Math.exp(lerp(Math.log(l0), Math.log(l1), easeInOut(u)));
+  const len = approachLength(l0, l1, easeInOut(u));
   const dir = slerp(d0, d1, smoothstep(APPROACH_ORBIT_FROM, 1, u));
   return { offset: scale(dir, len), forward: scale(dir, -1), fov: lerp(from.fov, to.fov, smoothstep(0, 1, u)) };
 }
@@ -217,7 +259,7 @@ export class CameraRig {
 
   /**
    * 視点を切り替える。いまの姿勢から、移った先の姿勢へ。
-   * 引きの眺めと本体の視点の間は、ボイジャーを中央に置いたまま寄る・引く(約 2.8 秒)。ほかは約 1.6 秒で補間する
+   * 引きの眺めと本体の視点の間は、ボイジャーを中央に置いたまま寄る・引く(約 3.2 秒)。ほかは約 1.6 秒で補間する
    */
   switchView(fromView: ViewId, toView: ViewId, animate: boolean): void {
     if (animate && this.lastPose) {
