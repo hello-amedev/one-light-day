@@ -294,7 +294,7 @@
 | 出典 | 地球と月の写真　NASA/JPL（PIA00013） |
 | 出典 | ペイル・ブルー・ドットの写真　NASA/JPL-Caltech（2020年の再処理版） |
 | 出典 | ボイジャー1号の3Dモデル　NASA 3D Resources（Voyager Probe (B)） |
-| 出典 | フォント　Michroma、Share Tech Mono、Zen Kaku Gothic New　SIL Open Font License 1.1（https://openfontlicense.org/） |
+| 出典 | フォント　Michroma、Share Tech Mono、IBM Plex Sans JP　SIL Open Font License 1.1（https://openfontlicense.org/） |
 | 出典 | 3Dの表示　three.js　MIT License（https://opensource.org/license/mit） |
 | 出典 | 3Dモデルの展開　Draco（Google）　Apache License 2.0（https://www.apache.org/licenses/LICENSE-2.0） |
 

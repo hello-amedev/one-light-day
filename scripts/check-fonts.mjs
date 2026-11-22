@@ -19,7 +19,9 @@ for (const f of sourceFontFiles()) for (const cp of readCmap(fs.readFileSync(f))
 
 const missing = [...site].filter((cp) => original.has(cp) && !have.has(cp));
 const noGlyph = [...site].filter((cp) => !original.has(cp));
-const baseMissing = [...baseChars()].filter((cp) => original.has(cp) && !have.has(cp));
+// 常に入れる文字は、絞る元の一括ファイルにあるものだけを求める(build-fonts.mjs と同じ基準。分割ファイルにだけある記号は入れない)
+const main = readCmap(fs.readFileSync(sourceFontFiles()[0]));
+const baseMissing = [...baseChars()].filter((cp) => main.has(cp) && !have.has(cp));
 
 if (noGlyph.length) console.warn(`fonts: 元のフォントに字形が無い文字(端末のフォントで出る): ${noGlyph.map(cpToChar).join('')}`);
 if (missing.length || baseMissing.length) {

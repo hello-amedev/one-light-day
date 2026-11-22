@@ -65,7 +65,7 @@ const TITLE_OVERLAY = `(async () => {
   root.append(name, days, rule, sub);
   document.body.append(root);
   await document.fonts.ready;
-  await Promise.all([document.fonts.load('46px Michroma'), document.fonts.load('27px "Share Tech Mono"'), document.fonts.load('20px "Zen Kaku Gothic New"', 'ボイジャー1号、1光日の旅')]);
+  await Promise.all([document.fonts.load('46px Michroma'), document.fonts.load('27px "Share Tech Mono"'), document.fonts.load('20px "IBM Plex Sans JP"', 'ボイジャー1号、1光日の旅')]);
   return document.fonts.check('46px Michroma');
 })()`;
 

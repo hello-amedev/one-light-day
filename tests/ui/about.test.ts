@@ -33,7 +33,7 @@ describe('「このサイトについて」の文言', () => {
       'NASA/JPL-Caltech',
       'Michroma',
       'Share Tech Mono',
-      'Zen Kaku Gothic New',
+      'IBM Plex Sans JP',
       'SIL Open Font License 1.1',
       'three.js',
       'MIT License',

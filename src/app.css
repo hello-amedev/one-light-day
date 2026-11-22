@@ -9,11 +9,11 @@
 @import '@fontsource/michroma/400.css';
 @import '@fontsource/share-tech-mono/400.css';
 @font-face {
-  font-family: 'Zen Kaku Gothic New';
+  font-family: 'IBM Plex Sans JP';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('./assets/fonts/zen-kaku-gothic-new-subset.woff2') format('woff2');
+  src: url('./assets/fonts/ibm-plex-sans-jp-subset.woff2') format('woff2');
 }
 
 :root {
@@ -39,8 +39,8 @@
   /* フォント。題字は 1970 年代の計器盤に多かった幅の広い欧文、数字は当時の端末のような等幅、本文は細めのゴシック体。
      数字の字体に日本語の字は無いので、「億km」などは本文の字体で出る */
   --font-title: 'Michroma', ui-sans-serif, system-ui, sans-serif;
-  --font-numeric: 'Share Tech Mono', 'Zen Kaku Gothic New', ui-monospace, Menlo, monospace;
-  --font-body: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  --font-numeric: 'Share Tech Mono', 'IBM Plex Sans JP', ui-monospace, Menlo, monospace;
+  --font-body: 'IBM Plex Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
   /* 題字は幅の広い書体なので、スマホの幅で日付とぶつからない大きさに抑える */
   --title-size: 0.9375rem;
   --title-tracking: 0.28em;

@@ -18,9 +18,9 @@ ONE LIGHT-DAY は NASA / JPL とは関係のない、非公式のファンサイ
 |---|---|---|---|
 | Michroma | 題字 | Copyright 2011 The Michroma Project Authors | `@fontsource/michroma` |
 | Share Tech Mono | 数字 | Copyright (c) 2012, Carrois Type Design, Ralph du Carrois(予約フォント名 "Share") | `@fontsource/share-tech-mono` |
-| Zen Kaku Gothic New(太さ 400) | 本文と日本語 | Copyright 2022 The Zen Project Authors | `@fontsource/zen-kaku-gothic-new` |
+| IBM Plex Sans JP(太さ 400) | 本文と日本語 | Copyright 2018 IBM Corp. | `@fontsource/ibm-plex-sans-jp` |
 
-Zen Kaku Gothic New は、サイトで使う文字だけを残した 1 ファイル(`src/assets/fonts/zen-kaku-gothic-new-subset.woff2`)に絞って同梱しています。
+IBM Plex Sans JP は、サイトで使う文字だけを残した 1 ファイル(`src/assets/fonts/ibm-plex-sans-jp-subset.woff2`)に絞って同梱しています。
 絞ることは OFL で認められた改変です。元と同じ OFL 1.1 の下にあり、ライセンスの全文は https://openfontlicense.org/ で読めます。
 
 ## データ

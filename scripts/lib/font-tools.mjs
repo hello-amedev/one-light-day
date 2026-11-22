@@ -9,8 +9,8 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const SUBSET_FILE = path.join(ROOT, 'src/assets/fonts/zen-kaku-gothic-new-subset.woff2');
-export const SOURCE_DIR = path.join(ROOT, 'node_modules/@fontsource/zen-kaku-gothic-new/files');
+export const SUBSET_FILE = path.join(ROOT, 'src/assets/fonts/ibm-plex-sans-jp-subset.woff2');
+export const SOURCE_DIR = path.join(ROOT, 'node_modules/@fontsource/ibm-plex-sans-jp/files');
 
 /** 常に入れる文字: ASCII の印字できる文字、ひらがな・カタカナ全部、日本語の基本の記号(絞る元のフォントに無い文字は入れない) */
 export function baseChars() {

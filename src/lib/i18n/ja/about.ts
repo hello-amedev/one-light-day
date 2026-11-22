@@ -210,7 +210,7 @@ export const about = {
             { use: 'ボイジャー1号の3Dモデル', name: 'NASA 3D Resources（Voyager Probe (B)）' },
             {
               use: 'フォント',
-              name: 'Michroma、Share Tech Mono、Zen Kaku Gothic New',
+              name: 'Michroma、Share Tech Mono、IBM Plex Sans JP',
               license: 'SIL Open Font License 1.1',
               href: 'https://openfontlicense.org/',
             },
