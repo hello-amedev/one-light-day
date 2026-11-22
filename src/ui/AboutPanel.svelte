@@ -74,7 +74,11 @@
               <dl>
                 {#each block.items as item}
                   <dt>{item.term}</dt>
-                  <dd class:copy={item.text.includes('@')}>{item.text}</dd>
+                  {#if item.href}
+                    <dd><a class="term-link" href={item.href} target="_blank" rel="noopener noreferrer">{item.text}</a></dd>
+                  {:else}
+                    <dd>{item.text}</dd>
+                  {/if}
                 {/each}
               </dl>
             {:else if block.kind === 'credits'}
@@ -254,17 +258,15 @@
     color: var(--color-text-dim);
     overflow-wrap: anywhere;
   }
-  /* 押すと全体が選ばれる(コピーしやすい) */
-  dd.copy {
-    font-family: var(--font-numeric);
-    user-select: all;
-    -webkit-user-select: all;
-  }
   .license,
   a {
     margin-left: var(--space-1);
     color: var(--color-text);
     white-space: nowrap;
+  }
+  /* 項目の説明そのものがリンクの時は、前に名前が無いので空けない */
+  a.term-link {
+    margin-left: 0;
   }
   a {
     text-decoration: underline;

@@ -7,8 +7,8 @@ export type AboutBlock =
   | { kind: 'sub'; text: string }
   /** 箇条書き */
   | { kind: 'list'; items: string[] }
-  /** 項目名と説明の組（操作のしかた、再現と演出の区別、問い合わせ先） */
-  | { kind: 'terms'; items: { term: string; text: string }[] }
+  /** 項目名と説明の組（操作のしかた、再現と演出の区別、問い合わせ先）。href があれば説明をリンクにする */
+  | { kind: 'terms'; items: { term: string; text: string; href?: string }[] }
   /** 出典。use は何に使ったか、name は出典の名前（原文のまま）、license は条件の名前（href があればリンクにする） */
   | { kind: 'credits'; items: { use: string; name: string; license?: string; href?: string; note?: string }[] };
 
@@ -233,12 +233,13 @@ export const about = {
     {
       heading: '問い合わせ先',
       blocks: [
-        { kind: 'p', text: '表示の不具合や事実の誤りに気付いた時は、メールでお知らせください。' },
+        { kind: 'p', text: '表示の不具合や事実の誤りに気付いた時は、作者のサイトからお知らせください。' },
         {
           kind: 'terms',
           items: [
             { term: '作者', text: 'ame_dev' },
-            { term: 'メール', text: 'amemitai@gmail.com' },
+            // メールアドレスはこのサイトに出さず、作者のサイト(問い合わせ先がある)へのリンクにする(2026-11-22 あめさんの指定)
+            { term: 'サイト', text: 'ame-dev.com', href: 'https://ame-dev.com/' },
           ],
         },
       ],

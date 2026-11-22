@@ -16,7 +16,7 @@
 
 ボイジャー1号の49年を、ボイジャーの視界と太陽系の引きの眺めでたどるファンサイト。Vite + Svelte 5 + three.js の静的なサイト。
 GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改名して公開。手元のフォルダ名は voyager のまま)。
-サイトは https://ame-dev.com/one-light-day/ で動いている(GitHub Pages。告知はまだで、検索よけの印を入れてある)。更新の反映は docs/publish.md の「公開のあと」。
+サイトは https://ame-dev.com/one-light-day/ で動いている(GitHub Pages。2026-11-22 に検索よけを外して正式に公開した)。更新の反映は docs/publish.md の「公開のあと」。
 
 ## 2. 現在の状態(2026-11-22)
 
@@ -29,7 +29,8 @@ GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改
 - **第4段階(引きの眺め)は完了**。早回し中の惑星の残像の弧、垂線、名場面の刻み、縮尺の物差し、開いた直後の自動再生、減速の見直し。`npm run verify` と計測が通る
 - **第5段階(仕上げ)は実装が終わり、本番の環境であめさんが確認している**。「このサイトについて」、名場面ごとの URL(`?scene=`)、共有用の画像と説明、
   3D が使えない端末向けの表示(`?no3d` で確認)、数字の桁が回る動き、絞ったフォント、読み込む量の検査、公開の手順書(docs/publish.md)。`npm run verify` と計測が通る
-- **告知せずに公開した**(2026-11-21)。あめさんの方針は「すぐ外にリンクは出さず、本番の環境で最終調整する」。`index.html` に検索よけ(noindex)を入れてあり、告知の前に外す
+- **正式に公開した**(2026-11-22)。2026-11-21 に告知せずに公開して本番で最終調整し、2026-11-22 に検索よけ(noindex)を外した。
+  問い合わせ先はメールアドレスを出さず、作者のサイト(https://ame-dev.com/)へのリンクにした
 - **確認リスト**: https://claude.ai/artifact/J3m1UWXu4ZPYJgWnHnUesL(あめさんだけが見られる Artifact)。項目ごとに 未確認 / OK / 直したい とメモを、あめさんが書き込む。
   中身は Artifact の db の `checks` コレクション(ArtifactData の list で読む。項目を足す時は order を 10 刻みで、status は todo / ok / fix)。直したら status はあめさんに付け直してもらう
 - **文言の直しの画面**: https://claude.ai/artifact/HkZcCKmSzftQ6gvdrLRzn9(2026-11-22 に作成。あめさんだけが見られる)。辞書の文言 228 件を 1 件ずつ書き換え・コメントできる。
@@ -79,7 +80,7 @@ GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改
 5. 直したら main に入れて、公開用のワークフローを動かす(`gh workflow run deploy.yml --repo hello-amedev/one-light-day --ref main`)。**Claude からの実行は自動の判定で止められることがある**ので、その時はあめさんにこのコマンドを渡す
    **公開の最後の手順(deploy-pages)が「github-pages の成果物が見つからない」で失敗することが 2026-11-22 に 5 回続いたので、作る段と公開する段に分けた**(GitHub の標準の形。分けた後は 1 回で成功)。
    失敗した実行を `gh run rerun --failed` でやり直すと、成果物が 2 つになって別の失敗になる。やり直す時はワークフローを最初から動かす
-6. 告知の前に: 検索よけを外して公開し直す(docs/publish.md「告知の前に」)。サイト名を変える時は、辞書 `src/lib/i18n/ja/intro.ts`、`index.html` の題と説明、`tools/shots/shoot.mjs` の題字を直して `public/og.jpg` を撮り直す
+6. 検索よけは 2026-11-22 に外した(済み)。サイト名を変える時は、辞書 `src/lib/i18n/ja/intro.ts`、`index.html` の題と説明、`tools/shots/shoot.mjs` の題字を直して `public/og.jpg` を撮り直す
 7. 地球の高精細の画像(8,192 画素)が取得できるようになったら差し替える(docs/assets/textures.md)
 8. 2026-11-14 からボイジャー1号のデータが届かず搬送波だけになっている件(NASA が調査中)を、サイトに載せるか決める。載せるなら SPEC.md の提案リストに書いてから(調べた内容は docs/events.md の末尾)
 

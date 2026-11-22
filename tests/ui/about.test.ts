@@ -46,10 +46,14 @@ describe('「このサイトについて」の文言', () => {
       for (const b of s.blocks)
         if (b.kind === 'credits') for (const c of b.items) if (c.href) expect(c.href).toMatch(/^https:\/\//);
   });
-  it('問い合わせ先は、作者名とメールアドレスの文字で置く', () => {
+  it('問い合わせ先は、作者名と作者のサイトへのリンクで置き、メールアドレスは出さない', () => {
     expect(allText).toContain('ame_dev');
-    expect(allText).toContain('amemitai@gmail.com');
+    expect(allText).not.toContain('@');
     expect(allText).not.toContain('mailto:');
+    const links = about.sections.flatMap((s) =>
+      s.blocks.flatMap((b) => (b.kind === 'terms' ? b.items.flatMap((i) => (i.href ? [i.href] : [])) : [])),
+    );
+    expect(links).toContain('https://ame-dev.com/');
   });
   it('専門の言葉をそのまま出さない', () => {
     for (const word of ['黄道', '光学的厚み', 'IAU']) expect(allText).not.toContain(word);
