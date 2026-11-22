@@ -25,6 +25,7 @@
 | 数の桁区切り | `formatInteger` | `src/lib/format.ts` | |
 | 色・フォント | `src/app.css` の変数(`var(--color-…)`・`var(--font-…)`)。部品に直書きしない | `src/app.css` | ✔ ui-token-only |
 | 線の太さ・動きの長さ・余白・押す範囲 | `--line-*`・`--dur-*`・`--space-*`・`--hit-min` / `--control-h` | `src/app.css` | |
+| 画面の端と部品の間(PC は広い) | `--edge-x` / `--edge-top` / `--edge-bottom`(安全な領域に足す) | `src/app.css` | |
 | スマホの安全な領域 | `--safe-top` / `--safe-right` / `--safe-bottom` / `--safe-left` | `src/app.css` | |
 
 ## 状態
@@ -47,17 +48,20 @@
 | やりたいこと | 使うもの | 場所 |
 |---|---|---|
 | ボタンを置く(文字かアイコン。選択中は金の下線。押す範囲は指で 44px。指した時の吹き出し) | `UiButton`(`icon`・`tip`・`pressed`・`expanded`・`label`) | `src/ui/UiButton.svelte` |
+| ボタンをまとまりにする(薄い地と細い枠。間の区切り線。今は左下の再生だけ。箱を増やすとシンプルさが損なわれるので、足す前にあめさんに聞く) | `class="ui-group"` の箱に `UiButton` を入れ、区切りは `<span class="ui-group-sep"></span>` | `src/app.css` |
+| 押すと開く一覧(メニュー・視点の向き・再生速度) | `class="ui-menu"` の箱(位置と幅は部品で決める)、項目は `ui-menu-item`、左の印は `ui-menu-mark`(入・切の四角。`.on` で入、`.blank` で空き)。いくつかから 1 つの項目は `role="menuitemradio"` にすると、選ばれている行がうっすら金の地になる。開閉は `use:popover` | `src/app.css`・`src/ui/popover.ts` |
+| 送り・トピックの移動・一覧を開く矢印 | `Chevron`(`direction` は left / right / down、`bar` で端に縦線) | `src/ui/Chevron.svelte` |
 | アイコンを描く(視界・引き・本体・メニュー・向く・再生・停止) | `Icon` | `src/ui/Icon.svelte` |
 | 中央にそろえた短い文を、句点・読点・空白の後でだけ改行させる(語の途中で行が分かれない) | `PhraseText`(区切りだけなら `splitPhrases`) | `src/ui/PhraseText.svelte`・`src/lib/phrases.ts` |
 | 右上の日付を押して入力し、その日へ移る(打った文字の読み方・範囲の判定は `dateInputToEt`) | `DateJump`(`bind:editing` で入力中を受け取る) | `src/ui/DateJump.svelte`・`src/lib/dateInput.ts` |
 | 名場面・出来事の文に添えて浮かばせる写真(地球と月、ペイル・ブルー・ドット) | `captionPhotoOf`(表示は `SceneCaption`) | `src/ui/captionPhoto.ts` |
 | 写真を画面の中央へ大きく広げる(浮かぶ写真から) | `PhotoViewer`(`photo` に `ViewerPhoto` を渡す。null で閉じる) | `src/ui/PhotoViewer.svelte` |
 | 開いた直後の状態に戻して自動再生し直す | `store.restart(still)`(3D のカメラは `resetSeq` で戻す) | `src/lib/store/`・`src/stage/camera.ts` の `reset` |
-| 右上のメニュー(表示の切り替え・星空だけ・使い方・このサイトについて) | `MainMenu` | `src/ui/MainMenu.svelte` |
+| 左上のメニュー(視点・視点の向き・表示の切り替え・星空だけ・使い方・このサイトについて) | `MainMenu` | `src/ui/MainMenu.svelte` |
 | 使い方の案内(部品を囲んで札を出す 4 段。囲む部品は `data-tour` の印、段は `TUTORIAL_STEPS`。見たかどうかは `tutorialSeen` / `markTutorialSeen`) | `Tutorial` | `src/ui/Tutorial.svelte`・`src/lib/tutorial.ts` |
 | 一覧の開閉と矢印キーの操作 | `use:popover`、`nextMenuIndex` | `src/ui/popover.ts`・`src/ui/controls.ts` |
 | 右下の距離の上の倍率・機体からの距離 | `ReadoutExtra`(判断は `readoutExtra`) | `src/ui/ReadoutExtra.svelte`・`src/ui/controls.ts` |
-| 速さの次の値と送る量・向く相手の候補・星空だけの案内の選び方 | `nextRate` / `stepUnit` / `stepSeconds` / `chooseLookTargets` / `starsOnlyHintKind` | `src/ui/controls.ts` |
+| 速さの次の値と送る量・向く相手の候補・星空だけの案内の選び方 | `RATE_ORDER` / `stepUnit` / `stepSeconds` / `chooseLookTargets`(位置データと時刻からは `lookTargetsAt`) / `starsOnlyHintKind` | `src/ui/controls.ts` |
 | 矢印を描く(送り・名場面の移動) | `Chevron`(`bar` で名場面用) | `src/ui/Chevron.svelte` |
 | 数字のブロック(ラベル・大きい数字・補足) | `Readout`(日付も距離もこれ。補足の行は空でも高さを残す) | `src/ui/Readout.svelte` |
 | 数字が変わる時に桁を回す(ゆっくり変わる時だけ。判断 `planRoll`) | `RollingNumber`(`Readout` の大きい数字で使っている) | `src/ui/RollingNumber.svelte`・`src/ui/rolling.ts` |

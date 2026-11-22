@@ -28,7 +28,10 @@
   const body = $derived('bodyTouch' in words && touch ? words.bodyTouch : words.body);
 
   let viewport = $state({ width: 0, height: 0 });
+  /** 札の位置を決める、囲む部品全体の範囲 */
   let spot = $state<Rect | null>(null);
+  /** 囲む部品ごとの範囲。離れた部品(左上のメニューと右上の日付)は別々に囲む */
+  let spots = $state<Rect[]>([]);
   let cardWidth = $state(0);
   let cardHeight = $state(0);
   const pos = $derived(
@@ -41,11 +44,12 @@
   // 書き込む値(viewport・spot)を読まない。effect の中から呼ぶので、読むと自分の書き込みで呼ばれ直し続ける
   function measure() {
     const vp = { width: window.innerWidth, height: window.innerHeight };
-    const rects = step.targets.flatMap((id) =>
+    const groups = step.targets.map((id) =>
       [...document.querySelectorAll<HTMLElement>(`[data-tour="${id}"]`)].map((el) => el.getBoundingClientRect()),
     );
     viewport = vp;
-    spot = spotlightRect(rects, vp, PAD);
+    spot = spotlightRect(groups.flat(), vp, PAD);
+    spots = groups.map((g) => spotlightRect(g, vp, PAD)).filter((r): r is Rect => r !== null);
   }
 
   // 段が変わったら測り直す。部品が薄い状態から戻る動きの間に大きさが変わることがあるので、少し後にも測る
@@ -101,15 +105,34 @@
 <div class="tour">
   <!-- 後ろへ操作を通さない受け止め。押しても何もしない -->
   <div class="catcher" aria-hidden="true"></div>
-  {#if spot}
+  {#if spots.length === 1}
     <div
       class="spot"
       aria-hidden="true"
-      style:left="{spot.left}px"
-      style:top="{spot.top}px"
-      style:width="{spot.width}px"
-      style:height="{spot.height}px"
+      style:left="{spots[0].left}px"
+      style:top="{spots[0].top}px"
+      style:width="{spots[0].width}px"
+      style:height="{spots[0].height}px"
     ></div>
+  {:else if spots.length > 1}
+    <!-- 囲む範囲が離れている時は、範囲の分だけ穴を空けた暗い面で塗る -->
+    <svg class="holes" width={viewport.width} height={viewport.height} aria-hidden="true">
+      <path
+        fill-rule="evenodd"
+        d={`M0 0H${viewport.width}V${viewport.height}H0Z` +
+          spots.map((r) => `M${r.left} ${r.top}h${r.width}v${r.height}h${-r.width}Z`).join('')}
+      />
+    </svg>
+    {#each spots as r, i (i)}
+      <div
+        class="spot multi"
+        aria-hidden="true"
+        style:left="{r.left}px"
+        style:top="{r.top}px"
+        style:width="{r.width}px"
+        style:height="{r.height}px"
+      ></div>
+    {/each}
   {:else}
     <div class="scrim" aria-hidden="true"></div>
   {/if}
@@ -171,6 +194,13 @@
     inset: 0;
     background: var(--tour-scrim);
   }
+  .holes {
+    position: absolute;
+    inset: 0;
+  }
+  .holes path {
+    fill: var(--tour-scrim);
+  }
   /* 囲む範囲の外を暗くする(大きな影で塗る)。四隅に金の括弧 */
   .spot {
     position: absolute;
@@ -190,6 +220,10 @@
       top var(--dur-l) var(--ease-in-out),
       width var(--dur-l) var(--ease-in-out),
       height var(--dur-l) var(--ease-in-out);
+  }
+  /* 離れた範囲を囲む時は、暗くするのは上の穴の空いた面に任せ、括弧だけ描く */
+  .spot.multi {
+    box-shadow: none;
   }
   .card {
     position: absolute;

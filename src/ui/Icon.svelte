@@ -27,7 +27,7 @@
     <path d="M12 12.8v3M16 19.5h4.5" />
     <rect x="9" y="15.8" width="7" height="5" />
   {:else if name === 'menu'}
-    <path d="M4 7h16M4 12h16M4 17h16" />
+    <path d="M5.5 7.5h13M5.5 12h13M5.5 16.5h13" />
   {:else if name === 'look'}
     <circle cx="12" cy="12" r="5" />
     <path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4" />

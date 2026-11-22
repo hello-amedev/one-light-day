@@ -27,6 +27,11 @@
   /* 「このサイトについて」の板。宇宙の地の色を少し透かして、後ろの眺めがうっすら分かるようにする */
   --panel-bg: color-mix(in srgb, var(--color-space) 90%, transparent);
   --scrim-bg: color-mix(in srgb, var(--color-space) 55%, transparent);
+  /* メニューと視点の向きの一覧。後ろのボタンの字が透けて重ならないよう、板より濃くする */
+  --menu-bg: color-mix(in srgb, var(--color-space) 97%, transparent);
+  /* 一覧の中の、いくつかから 1 つを選ぶ項目(視点・再生速度)の選ばれている行の地 */
+  --select-bg: color-mix(in srgb, var(--color-gold) 16%, transparent);
+  --select-bg-hover: color-mix(in srgb, var(--color-gold) 24%, transparent);
   --tour-scrim: color-mix(in srgb, var(--color-space) 72%, transparent); /* 使い方の案内で、説明する部品の外を暗くする */
   /* 文字が星の上で読めるように周りへ落とす影 */
   --text-halo: 0 0 6px var(--color-space), 0 0 2px var(--color-space);
@@ -83,7 +88,18 @@
   --space-3: 16px;
   --space-4: 24px;
   --hit-min: 44px; /* 指で押す範囲の高さ */
+  /* 画面の端と操作の部品の間。PC は下の @media で広げる */
+  --edge-x: var(--space-3);
+  --edge-top: var(--space-3);
+  --edge-bottom: var(--space-2);
+  /* 画面の左上と右下の飾りの括弧。部品の枠と重ならないよう、端との間の内側に収める */
+  --corner-inset: 4px;
+  --corner-size: 10px;
   --control-h: 36px; /* マウスの時のボタンの高さ。指の時は --hit-min にする */
+
+  /* ボタンのまとまり(左下の再生・速さ・送り)の薄い地と細い枠 */
+  --group-bg: color-mix(in srgb, var(--color-space) 50%, transparent);
+  --group-border: color-mix(in srgb, var(--color-rule) 85%, transparent);
 
   /* 操作しない間に操作の層を薄くした時の不透明度 */
   --idle-opacity: 0.16;
@@ -98,6 +114,17 @@
 @media (pointer: coarse) {
   :root {
     --control-h: var(--hit-min);
+  }
+}
+
+/* PC: 画面の端との間を少し広げる(スマホは指の届く範囲を優先して狭いまま) */
+@media (min-width: 641px) and (hover: hover) and (pointer: fine) {
+  :root {
+    --edge-x: 28px;
+    --edge-top: var(--space-4);
+    --edge-bottom: 18px;
+    --corner-inset: 8px;
+    --corner-size: 14px;
   }
 }
 
@@ -130,4 +157,97 @@ body {
 button {
   font: inherit;
   color: inherit;
+}
+
+/* 一覧(メニュー・視点の向き・再生速度)。開く位置と幅は部品の側で決める。開閉と矢印の操作は use:popover */
+.ui-menu {
+  position: absolute;
+  z-index: 4;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-1) 0;
+  background: var(--menu-bg);
+  border: var(--line-thin) solid var(--color-rule);
+}
+.ui-menu-heading {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--text-xs);
+  letter-spacing: var(--label-tracking);
+  color: var(--color-gold);
+}
+.ui-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h);
+  line-height: 1;
+  padding: 0 var(--space-3);
+  background: none;
+  border: none;
+  color: var(--color-text-dim);
+  font-size: var(--text-s);
+  letter-spacing: 0.04em;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ui-menu-item[aria-checked='true'] {
+  color: var(--color-text);
+}
+.ui-menu-item:hover,
+.ui-menu-item:focus-visible {
+  color: var(--color-text);
+  background: var(--scrim-bg);
+}
+.ui-menu-item:focus-visible {
+  outline: var(--line-thin) solid var(--color-gold);
+  outline-offset: -2px;
+}
+/* いくつかから 1 つを選ぶ項目(role="menuitemradio")は、印を付けず、選ばれている行をうっすら金の地にする */
+.ui-menu-item[role='menuitemradio'][aria-checked='true'] {
+  background: var(--select-bg);
+}
+.ui-menu-item[role='menuitemradio'][aria-checked='true']:hover {
+  background: var(--select-bg-hover);
+}
+/* 項目の左の印。四角で入・切を示し、.on で中が金で埋まる。.blank は位置そろえの空き */
+.ui-menu-mark {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: var(--line-thin) solid var(--color-text-dim);
+  transition: background-color var(--dur-s) var(--ease-out);
+}
+.ui-menu-mark.on {
+  border-color: var(--color-gold);
+  background: var(--color-gold);
+  box-shadow: inset 0 0 0 2px var(--color-space);
+}
+.ui-menu-mark.blank {
+  border-color: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-menu-mark {
+    transition: none;
+  }
+}
+
+/* ボタンのまとまり(左下の再生・速さ・送り)。中のボタンは UiButton。区切りは .ui-group-sep */
+.ui-group {
+  display: inline-flex;
+  align-items: center;
+  background: var(--group-bg);
+  border: var(--line-thin) solid var(--group-border);
+  pointer-events: auto;
+}
+.ui-group-sep {
+  flex: none;
+  align-self: stretch;
+  width: 0;
+  margin: var(--space-2) 0;
+  border-left: var(--line-thin) solid var(--group-border);
 }

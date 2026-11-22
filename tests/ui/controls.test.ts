@@ -3,7 +3,7 @@ import {
   GAS_GIANT_MOONS,
   chooseLookTargets,
   nextMenuIndex,
-  nextRate,
+  RATE_ORDER,
   readoutExtra,
   starsOnlyHintKind,
   stepSeconds,
@@ -14,11 +14,8 @@ import { MAG_MAX } from '../../src/lib/zoom';
 import { t } from '../../src/lib/i18n';
 
 describe('速さのボタン', () => {
-  it('押すたびに 1時間 → 1日 → 1か月 → 1年 → 1時間 と進む', () => {
-    expect(nextRate('hour')).toBe('day');
-    expect(nextRate('day')).toBe('month');
-    expect(nextRate('month')).toBe('year');
-    expect(nextRate('year')).toBe('hour');
+  it('候補は 1時間・1日・1か月・1年の順に並ぶ', () => {
+    expect(RATE_ORDER).toEqual(['hour', 'day', 'month', 'year']);
   });
   it('送る量は、速さが 1時間の時は 1時間、それ以外は 1日', () => {
     expect(stepUnit('hour')).toBe('hour');

@@ -4,13 +4,8 @@ import type { LookTarget } from '../lib/scenes';
 import type { RateId, ViewId } from '../lib/store';
 import { atNacLimit, displayMagnification } from '../lib/zoom';
 
-/** 速さのボタンを押すたびに進む順(1時間 → 1日 → 1か月 → 1年 → 1時間) */
+/** 速さのボタンを押すと開く候補の並び(1時間・1日・1か月・1年) */
 export const RATE_ORDER: readonly RateId[] = ['hour', 'day', 'month', 'year'];
-
-export function nextRate(rate: RateId): RateId {
-  const i = RATE_ORDER.indexOf(rate);
-  return RATE_ORDER[(i + 1) % RATE_ORDER.length];
-}
 
 /** 送り(‹ ›)の量。速さが 1時間の時は 1時間、それ以外は 1日 */
 export function stepUnit(rate: RateId): 'hour' | 'day' {
@@ -77,6 +72,23 @@ export function chooseLookTargets(src: LookSource): LookTarget[] {
   for (const x of near) list.push(x.m);
   list.push('ahead');
   return list;
+}
+
+/** 位置データから、その時刻の向く相手の候補を出す(左上の「視点の向き」とメニューで同じものを使う) */
+export function lookTargetsAt(
+  eph: {
+    coverage(body: BodyId): { t0: number; t1: number };
+    distance(a: BodyId | 'voyager1', b: BodyId | 'voyager1', et: number): number;
+  },
+  et: number,
+): LookTarget[] {
+  return chooseLookTargets({
+    inCoverage: (body) => {
+      const c = eph.coverage(body);
+      return et >= c.t0 && et <= c.t1;
+    },
+    distance: (a, b) => eph.distance(a, b, et),
+  });
 }
 
 // ── メニュー(一覧)のキーボード操作 ──

@@ -9,13 +9,13 @@
     align?: 'start' | 'end';
     /** 地球に関する数字だけ淡い青にする */
     earth?: boolean;
-    /** スマホの縦画面では、ラベル・数字・補足を 1 行に並べる(下側の場所を節約する) */
-    rowOnPhone?: boolean;
+    /** スマホの縦画面では、PC と同じ段のまま左にそろえる(右下の距離。右は再生のまとまりが使う) */
+    startOnPhone?: boolean;
   }
-  let { label, value, sub, align = 'end', earth = false, rowOnPhone = false }: Props = $props();
+  let { label, value, sub, align = 'end', earth = false, startOnPhone = false }: Props = $props();
 </script>
 
-<div class="readout" class:end={align === 'end'} class:earth class:row-on-phone={rowOnPhone}>
+<div class="readout" class:end={align === 'end'} class:earth class:start-on-phone={startOnPhone}>
   {#if label}<div class="label">{label}</div>{/if}
   <div class="value"><RollingNumber {value} /></div>
   <!-- 補足が出たり消えたりしても高さが変わらないよう、空でも 1 行ぶんを残す -->
@@ -37,11 +37,8 @@
     text-align: right;
   }
   @media (max-width: 640px) and (orientation: portrait) {
-    .readout.row-on-phone {
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-items: baseline;
-      column-gap: var(--space-2);
+    .readout.start-on-phone {
+      align-items: flex-start;
       text-align: left;
     }
   }
@@ -62,9 +59,11 @@
     .value {
       font-size: var(--text-xl);
     }
-    .label,
+    .label {
+      margin-bottom: 2px;
+    }
     .sub {
-      margin: 0;
+      margin-top: 2px;
     }
   }
   .earth .value {

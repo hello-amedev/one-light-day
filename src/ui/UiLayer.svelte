@@ -1,5 +1,6 @@
 <script lang="ts">
   // 操作の部品の層。四隅(スマホの縦画面は上と下)に部品を置き、操作しない間は薄くする。
+  // 左上は 3 段: 題字とメニュー / 視点の切り替え / 視点の向き。右上は日付、右下は距離、下は再生と時間軸。
   // 層全体は pointer-events: none で、部品だけが auto。星空の上の操作は 3D 側へ通る。
   import { onDestroy, onMount } from 'svelte';
   import type { Ephemeris } from '../lib/ephemeris';
@@ -78,6 +79,7 @@
     store.pause();
     menuOpen = false;
     lookOpen = false;
+    rateOpen = false;
     markTutorialSeen();
     tutorialOpen = true;
   }
@@ -90,7 +92,9 @@
 
   /** 右上の日付を入力している間 */
   let dateEditing = $state(false);
-  const popOpen = $derived(menuOpen || lookOpen || dateEditing || tutorialOpen);
+  /** 左下の速さの一覧を開いている間 */
+  let rateOpen = $state(false);
+  const popOpen = $derived(menuOpen || lookOpen || rateOpen || dateEditing || tutorialOpen);
 
   // ── 星空だけを表示 ──
   // 数字と操作をすべて隠す(戻るのは 3D 側の星空のタップ、または Esc)。入った時に戻し方を数秒だけ案内する
@@ -184,33 +188,34 @@
   class:stars-only={starsOnly}
 >
   <header class="brand">
-    <h1 class="title">
-      <a href={import.meta.env.BASE_URL} class="home" title={com.restart} onclick={restart}>{com.title}</a>
-    </h1>
-    <div data-tour="views">
+    <div class="brand-row">
+      <h1 class="title">
+        <a href={import.meta.env.BASE_URL} class="home" title={com.restart} onclick={restart}>{com.title}</a>
+      </h1>
+      <div class="menu" data-tour="menu">
+        <MainMenu {store} {eph} onabout={openAbout} ontutorial={openTutorial} bind:open={menuOpen} />
+      </div>
+    </div>
+    <div class="views" data-tour="views">
       <ViewSwitch {store} />
     </div>
+    {#if view.state.view !== 'craft'}
+      <div class="look" data-tour="look">
+        <LookMenu {store} {eph} bind:open={lookOpen} />
+      </div>
+    {/if}
   </header>
 
   <div class="top">
     <div class="date" data-tour="date">
       <DateJump {store} bind:editing={dateEditing} />
     </div>
-    <div class="menu" data-tour="menu">
-      <MainMenu {store} onabout={openAbout} ontutorial={openTutorial} bind:open={menuOpen} />
-    </div>
   </div>
-
-  {#if view.state.view !== 'craft'}
-    <div class="look" data-tour="look">
-      <LookMenu {store} {eph} bind:open={lookOpen} />
-    </div>
-  {/if}
 
   <div class="readout-area">
     <ReadoutExtra extra={extra} />
     <Readout
-      rowOnPhone
+      startOnPhone
       label={sunMode ? txt.fromSun : txt.fromEarth}
       value={formatDistance(distKm)}
       sub={sunMode ? undefined : formatLightTime(distKm, showLightSeconds)}
@@ -220,7 +225,7 @@
 
   <div class="bottom">
     <div class="transport">
-      <PlayControls {store} />
+      <PlayControls {store} bind:rateOpen />
     </div>
     <div class="timeline" data-tour="timeline">
       <Timeline {store} />
@@ -259,11 +264,11 @@
     grid-template-areas:
       'brand top'
       '. .'
-      'look readout'
+      '. readout'
       'bottom bottom';
     row-gap: var(--space-2);
-    padding: calc(var(--safe-top) + var(--space-3)) calc(var(--safe-right) + var(--space-3))
-      calc(var(--safe-bottom) + var(--space-2)) calc(var(--safe-left) + var(--space-3));
+    padding: calc(var(--safe-top) + var(--edge-top)) calc(var(--safe-right) + var(--edge-x))
+      calc(var(--safe-bottom) + var(--edge-bottom)) calc(var(--safe-left) + var(--edge-x));
     font-family: var(--font-body);
     transition:
       opacity var(--dur-l) var(--ease-in-out),
@@ -274,21 +279,21 @@
   .ui::after {
     content: '';
     position: absolute;
-    width: 18px;
-    height: 18px;
+    width: var(--corner-size);
+    height: var(--corner-size);
     border: var(--line-thin) solid var(--color-gold);
     opacity: 0.75;
     pointer-events: none;
   }
   .ui::before {
-    top: calc(var(--safe-top) + 6px);
-    left: calc(var(--safe-left) + 6px);
+    top: calc(var(--safe-top) + var(--corner-inset));
+    left: calc(var(--safe-left) + var(--corner-inset));
     border-right: 0;
     border-bottom: 0;
   }
   .ui::after {
-    bottom: calc(var(--safe-bottom) + 6px);
-    right: calc(var(--safe-right) + 6px);
+    bottom: calc(var(--safe-bottom) + var(--corner-inset));
+    right: calc(var(--safe-right) + var(--corner-inset));
     border-left: 0;
     border-top: 0;
   }
@@ -312,17 +317,13 @@
     visibility: hidden;
   }
   .brand,
-  .look,
   .transport,
-  .timeline,
-  .menu {
+  .timeline {
     transition: opacity var(--dur-l) var(--ease-in-out);
   }
   .ui.intro-run .brand,
-  .ui.intro-run .look,
   .ui.intro-run .transport,
-  .ui.intro-run .timeline,
-  .ui.intro-run .menu {
+  .ui.intro-run .timeline {
     opacity: var(--idle-opacity);
   }
   .brand {
@@ -331,6 +332,15 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-1);
+    min-width: 0;
+  }
+  /* 1 段目: 題字と、その右のメニューのボタン */
+  .brand-row {
+    /* メニューの一覧は、この行の左端(題字の左)にそろえて開く */
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
   }
   .title {
     margin: 0;
@@ -355,7 +365,7 @@
     outline: var(--line-thin) solid var(--color-gold);
     outline-offset: var(--space-1);
   }
-  /* 右上: 日付と、その右のメニューのアイコン */
+  /* 右上: 日付 */
   .top {
     grid-area: top;
     justify-self: end;
@@ -366,15 +376,6 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-  }
-  /* アイコンの余白ぶん、右の端へ寄せる */
-  .menu {
-    margin-right: calc(var(--space-2) * -1);
-  }
-  .look {
-    grid-area: look;
-    align-self: end;
-    justify-self: start;
   }
   .readout-area {
     grid-area: readout;
@@ -396,7 +397,6 @@
   }
   .transport {
     flex: none;
-    margin-left: calc(var(--space-2) * -1);
   }
   .timeline {
     flex: 1;
@@ -404,8 +404,8 @@
   }
   .debug {
     position: absolute;
-    left: calc(var(--safe-left) + var(--space-3));
-    top: calc(var(--safe-top) + 6rem);
+    left: calc(var(--safe-left) + var(--edge-x));
+    bottom: calc(var(--safe-bottom) + 7rem);
     font-family: var(--font-numeric);
     font-size: var(--text-xs);
     color: var(--color-text-dim);
@@ -442,20 +442,31 @@
   }
 
   /* スマホの縦画面: 題字と日付は上、数字・操作・時間軸は親指が届く下側に集める。
-     向くと、再生・速さ・送りは 1 行に並べ、時間軸はその下の全幅にする */
+     下側は、左に距離(PC と同じ段)、右に再生のまとまり、その下の全幅に時間軸 */
   @media (max-width: 640px) and (orientation: portrait) {
     /* 幅の狭い画面では、題字の字の間を詰めて右上の日付と離す */
     .title {
       letter-spacing: 0.12em;
     }
+    .brand-row {
+      gap: var(--space-2);
+      /* 押す範囲(44px)の上の空きぶん持ち上げ、題字の字の中心を右上の日付の数字の中心にそろえる */
+      margin-top: calc(var(--space-2) * -1);
+    }
+    /* 題字と視点のアイコンの間の、押す範囲どうしの空きを詰める */
+    .brand {
+      gap: 0;
+    }
+    .views {
+      margin-top: -6px;
+    }
     .ui {
       grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-rows: auto 1fr auto auto auto;
+      grid-template-rows: auto 1fr auto auto;
       grid-template-areas:
         'brand top'
         '. .'
-        'readout readout'
-        'look transport'
+        'readout transport'
         'timeline timeline';
     }
     .bottom {
@@ -463,25 +474,26 @@
     }
     .transport {
       grid-area: transport;
-      margin-left: 0;
-      margin-right: calc(var(--space-2) * -1);
+      justify-self: end;
+      align-self: end;
+      /* 距離の補足の行(光の速さで…)の下端にそろえる */
+      margin-bottom: 2px;
     }
     .timeline {
       grid-area: timeline;
     }
     .readout-area {
-      justify-self: stretch;
-      gap: 0;
+      justify-self: start;
+      align-items: flex-start;
+      gap: 2px;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .ui,
     .brand,
-    .look,
     .transport,
-    .timeline,
-    .menu {
+    .timeline {
       transition: none;
     }
     .hint {

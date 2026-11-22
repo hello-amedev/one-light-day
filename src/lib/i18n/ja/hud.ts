@@ -18,7 +18,7 @@ export const hud = {
   playGroup: '再生',
   play: '再生',
   pause: '停止',
-  /** 速さのボタンの名前(指した時)。押すたびに 1時間 → 1日 → 1か月 → 1年 と切り替わる */
+  /** 速さのボタンの名前(指した時)と、押すと開く候補の一覧の読み上げ。候補は下の rates */
   rateName: '再生速度',
   /** 速さのボタンの読み上げ。speed は下の rates の文 */
   rateButton: (speed: string) => `再生速度：${speed}`,
