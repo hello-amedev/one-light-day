@@ -34,6 +34,7 @@ GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改
   中身は Artifact の db の `checks` コレクション(ArtifactData の list で読む。項目を足す時は order を 10 刻みで、status は todo / ok / fix)。直したら status はあめさんに付け直してもらう
 - **文言の直しの画面**: https://claude.ai/artifact/HkZcCKmSzftQ6gvdrLRzn9(2026-11-22 に作成。あめさんだけが見られる)。辞書の文言 228 件を 1 件ずつ書き換え・コメントできる。
   あめさんに「直して」と言われたら、[tools/text-review/README.md](tools/text-review/README.md) の手順で、依頼ありの項目を辞書に入れて返事を書く。辞書を別の作業で直した時も、同じ README の手順で画面の「今の文言」を合わせる
+  2026-11-22 に 1 回目の依頼 62 件を辞書に入れて本番に反映した。画面の呼び名が変わった(ボイジャー視点・全体を俯瞰・視点の向き・トピック・時系列。SPEC.md「文言の直しの画面からの直し」)
 - 星の数は約9千個のまま(あめさんの指定なし)。約4万個は `?stars=deep` で試せる
 
 - **第6段階(本番での確認を受けた見直し)は本番に反映済み(2026-11-21)。確認リストに第6段階の 9 項目を足し、あめさんの確認待ち**。中身は SPEC.md の「第6段階の仕様」1〜8、
@@ -61,7 +62,7 @@ GitHub: hello-amedev/one-light-day(**Public**。2026-11-21 に voyager から改
 1. 確認リストに、2026-11-22 の直し(SPEC.md の「文の見直し」「2 回目」「3 回目」)の確認項目を足し、あめさんに本番で見てもらう。そのあと「直したい」の項目を直す。2026-11-21 に直した 4 項目と足した 3 項目もあめさんの確認待ち。
    文言は辞書を直したら `node scripts/dump-texts.mjs` で一覧を作り直す。見え方は天の川の濃さが `--milkyway-gain`、太陽の光が `--sun-glare`、数字の大きさが `--text-readout`
 2. 直したら main に入れて、公開用のワークフローを動かす(`gh workflow run deploy.yml --repo hello-amedev/one-light-day --ref main`)。**Claude からの実行は自動の判定で止められることがある**ので、その時はあめさんにこのコマンドを渡す
-   **2026-11-22 に公開の最後の手順(deploy-pages)が 2 回、「github-pages の成果物が見つからない」で失敗した**(失敗した手順のやり直しで成功)。続くなら、.github/workflows/deploy.yml の upload-pages-artifact と deploy-pages の版の組み合わせを見直す
+   **2026-11-22 に公開の最後の手順(deploy-pages)が 3 回、「github-pages の成果物が見つからない」で失敗した**(どれも `gh run rerun <番号> --failed` のやり直しで成功)。続くなら、.github/workflows/deploy.yml の upload-pages-artifact と deploy-pages の版の組み合わせを見直す
 3. 告知の前に: 検索よけを外して公開し直す(docs/publish.md「告知の前に」)。サイト名を変える時は、辞書 `src/lib/i18n/ja/intro.ts`、`index.html` の題と説明、`tools/shots/shoot.mjs` の題字を直して `public/og.jpg` を撮り直す
 4. 地球の高精細の画像(8,192 画素)が取得できるようになったら差し替える(docs/assets/textures.md)
 5. 2026-11-14 からボイジャー1号のデータが届かず搬送波だけになっている件(NASA が調査中)を、サイトに載せるか決める。載せるなら SPEC.md の提案リストに書いてから(調べた内容は docs/events.md の末尾)
