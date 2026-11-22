@@ -32,12 +32,21 @@
   } from './captionQueue';
 
   /** eph があれば、木星と土星の場面に太陽に対する速さの前後を添える */
-  let { store, eph }: { store: AppStore; eph?: Ephemeris } = $props();
+  interface Props {
+    store: AppStore;
+    eph?: Ephemeris;
+    /** 文が出た・消えた時に呼ぶ(出ている間、後ろの天体の名前と目印を薄くするため) */
+    onshownchange?: (shown: boolean) => void;
+  }
+  let { store, eph, onshownchange }: Props = $props();
 
   let cs: CaptionState = EMPTY_CAPTION;
   /** 出ている(または消えていく途中の)文。消えていく間も中身を残す */
   let current = $state<CaptionRef | null>(null);
   let shown = $state(false);
+  $effect(() => {
+    onshownchange?.(shown);
+  });
   /** 操作で消す時は速く、時間が来て消す時はゆっくり */
   let quick = $state(false);
   let timer: ReturnType<typeof setTimeout> | undefined;

@@ -8,13 +8,13 @@ import { pickScaleBar } from './scaleBar';
 
 const STYLE_ID = 'scale-bar-style';
 
-// 位置の決め方: 横長の画面は左下の操作の部品(向くボタン・再生・時間軸)の上、
-// スマホの縦画面は題字と日付の下(下側には数字・ボタン・時間軸が集まるので上に置く)
+// 位置の決め方: 横長の画面は左下の再生のまとまりのすぐ上(左端は操作の部品と同じ --edge-x)、
+// スマホの縦画面は左下の距離の数字のすぐ上(左上の視点の向きと重ならないよう、上には置かない)。引きの眺めでだけ出る
 const CSS = `
 .scale-bar {
   position: absolute;
-  left: calc(var(--safe-left) + var(--space-3));
-  bottom: calc(var(--safe-bottom) + var(--scale-bar-bottom, 11.5rem));
+  left: calc(var(--safe-left) + var(--edge-x));
+  bottom: calc(var(--safe-bottom) + var(--edge-bottom) + var(--control-h) + var(--space-4));
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -51,8 +51,8 @@ const CSS = `
 }
 @media (max-width: 640px) and (orientation: portrait) {
   .scale-bar {
-    bottom: auto;
-    top: calc(var(--safe-top) + var(--scale-bar-top, 6.5rem));
+    /* 距離(地球から・数字・光の速さで…)の 3 行の上。引きの眺めでは倍率の行が無い */
+    bottom: calc(var(--safe-bottom) + 8.5rem);
   }
 }
 @media (prefers-reduced-motion: reduce) {

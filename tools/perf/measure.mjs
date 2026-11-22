@@ -91,14 +91,14 @@ const PAGE_SCRIPT = `(async () => {
   button('停止')?.click();
   await sleep(300);
 
-  button('引きの眺め').click();
+  button('全体を俯瞰').click();
   out.toOverview = await record(2000);
   button('再生').click();
   await sleep(300);
   out.overviewPlaying = await record(2000);
   button('停止')?.click();
   await sleep(300);
-  button('ボイジャーの視界').click();
+  button('ボイジャー視点').click();
   out.toVoyager = await record(2000);
   return JSON.stringify(out);
 })()`;

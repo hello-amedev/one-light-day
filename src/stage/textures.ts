@@ -96,6 +96,36 @@ export function makeSpikeTexture(): THREE.CanvasTexture {
   });
 }
 
+/**
+ * ボイジャー自身の光点(全体を俯瞰)。白く鋭い芯と、ごく短い十字の光、淡い金のにじみ。
+ * 金の軌跡・トピックの印・惑星の点の中で、ただ一つの白い光に見えるようにする。加算で重ねる
+ */
+export function makeBeaconTexture(): THREE.CanvasTexture {
+  return makeLightTexture(128, (x, y) => {
+    const r = Math.hypot(x, y);
+    const core = 1 - smoothstep(0.1, 0.18, r);
+    const glint = (along: number, across: number): number =>
+      Math.pow(Math.max(0, 1 - Math.abs(along) / 0.85), 2.2) * Math.exp(-Math.abs(across) * 60);
+    const spike = Math.min(1, glint(x, y) + glint(y, x)) * 0.85;
+    const halo = 0.22 / (1 + Math.pow(r / 0.16, 2)) * edgeWindow(r);
+    const w = Math.min(1, core + spike * edgeWindow(r));
+    // 芯と光条は白、にじみは金に寄せる
+    return [w + halo, w + halo * 0.8, w + halo * 0.45];
+  });
+}
+
+/** 縁のくっきりした小さな丸(軌跡の上の出来事の点)。にじませず、縁だけ 1 段なめらかにする。色は素材の色で付ける */
+export function makeCrispDotTexture(): THREE.CanvasTexture {
+  return makeTexture(64, (g, c) =>
+    radial(g, c, [
+      [0, 'rgba(255,255,255,1)'],
+      [0.72, 'rgba(255,255,255,1)'],
+      [0.82, 'rgba(255,255,255,0)'],
+      [1, 'rgba(255,255,255,0)'],
+    ]),
+  );
+}
+
 /** 惑星や探査機の点。白の丸い点で、色は素材の色で付ける */
 export function makeDotTexture(): THREE.CanvasTexture {
   return makeTexture(64, (g, c) =>

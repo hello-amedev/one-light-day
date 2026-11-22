@@ -29,6 +29,8 @@
   let titleShown = $state(false);
   /** 天体の名前と目印を隠すか(メニューの切り替えで消した時と、「星空だけを表示」の間) */
   let markersHidden = $state(false);
+  /** 名場面・出来事の文が出ている間。天体の名前と目印を薄くして、文と重なっても文が読めるようにする */
+  let captionShown = $state(false);
   /** 3D の表示を始められなかった(WebGL が無いなど)。静止画と案内だけを出す */
   let no3d = $state(false);
 
@@ -151,7 +153,7 @@
 <main class="app">
   <!-- 重ね順: 3D の canvas → 目印の層(3D の担当が使う) → 操作の部品の層 -->
   <canvas class="stage" bind:this={canvas}></canvas>
-  <div class="markers" class:idle class:hidden-for-title={titleShown} class:hidden-by-choice={markersHidden} bind:this={overlay}></div>
+  <div class="markers" class:idle class:hidden-for-title={titleShown} class:hidden-by-choice={markersHidden} class:under-caption={captionShown} bind:this={overlay}></div>
 
   {#if no3d}
     <Fallback />
@@ -161,6 +163,7 @@
       {eph}
       stats={stage ? () => stage!.stats() : undefined}
       onIdleChange={(v) => (idle = v)}
+      onCaptionChange={(v) => (captionShown = v)}
       watchBody={stage ? (b, l) => stage!.watchBody(b, l) : undefined}
     />
   {:else}
@@ -192,6 +195,10 @@
   /* 操作の部品と同じ薄さ・同じ速さで薄くする */
   .markers.idle {
     opacity: var(--idle-opacity);
+  }
+  /* 名場面・出来事の文が出ている間は、名前と目印を薄くする(文が主役。文が消えたら戻る。操作しない間の薄さと、隠している間はそちらを優先) */
+  .markers.under-caption:not(.idle, .hidden-for-title, .hidden-by-choice) {
+    opacity: var(--markers-under-caption);
   }
   /* 題字の間は目印を出さない。隠す時は一瞬で(開いた直後に名前が一度見えてから消えるのを防ぐ)、
      題字が消えた後は、上の決まりの薄さ・濃さへなめらかに戻る */

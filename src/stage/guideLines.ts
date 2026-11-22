@@ -1,8 +1,8 @@
 // 引きの眺めで、ボイジャーの位置を読み取りやすくする線の描画(計算は guide.ts)。
 // ・ボイジャーから黄道面(惑星の並ぶ面)へ下ろした細い点線の垂線と、面の上の足もとの小さな輪。
 //   普段は出さず、引きの眺めを回している間とその後の数秒、土星の場面の前後だけ、すっと現れて消える(第6段階。出す判断は guide.ts)
-// ・過ぎた名場面の、軌跡の上の小さな刻み(軌跡に直交する短い線)
-// ・過ぎた単独の出来事の、軌跡の上の小さな点(名場面の刻みより小さく控えめ)
+// ・過ぎた名場面(メインのトピック)の、軌跡の上の刻み(軌跡に直交する短い線)
+// ・過ぎた単独の出来事(サブのトピック)の、軌跡の上の小さな点。惑星の点と見分けるため、にじませずに縁をくっきりさせる
 // ボイジャーの視界では出さない(カメラのずれが小さい間は消える)。「星空だけを表示」の間はすべて消える。
 import * as THREE from 'three';
 import type { Ephemeris } from '../lib/ephemeris';
@@ -14,7 +14,7 @@ import { viewLineFade } from './fade';
 import { footOnEcliptic } from './guide';
 import type { Vec3 } from './math';
 import type { Theme } from './theme';
-import { makeDotTexture } from './textures';
+import { makeCrispDotTexture } from './textures';
 
 /** 垂線の点線の最大の数 */
 const MAX_DASHES = 56;
@@ -26,17 +26,17 @@ const MIN_DROP_PX = 12;
 /** 足もとの輪の半径(px) */
 const FOOT_RING_PX = 6.5;
 const FOOT_SEGMENTS = 40;
-/** 名場面の刻みの長さ(px) */
-const TICK_PX = 9;
+/** 名場面の刻みの長さ(px)。惑星の点や出来事の点と見分けられる長さにする */
+const TICK_PX = 14;
 /** 刻みの向きを決める、前後の時間(秒) */
 const TICK_SPAN_S = 86400;
-/** 単独の出来事の点の大きさ(CSS px)。名場面の刻み(9px)より小さく */
-const EVENT_DOT_PX = 5;
+/** 単独の出来事の点の大きさ(CSS px。くっきりした丸は、この 8 割ほどの径に見える)。軌跡の線と見分けられる最小の大きさにする */
+const EVENT_DOT_PX = 3;
 
 const DROP_OPACITY = 0.6;
 const FOOT_OPACITY = 0.8;
-const TICK_OPACITY = 0.95;
-const EVENT_OPACITY = 0.8;
+const TICK_OPACITY = 1;
+const EVENT_OPACITY = 0.9;
 
 function makeLines<T extends THREE.Line | THREE.LineSegments | THREE.LineLoop>(
   ctor: new (g: THREE.BufferGeometry, m: THREE.Material) => T,
@@ -72,7 +72,7 @@ export class GuideLines {
     this.drop = makeLines(THREE.LineSegments, MAX_DASHES * 2, theme.gold);
     this.foot = makeLines(THREE.LineLoop, FOOT_SEGMENTS, theme.gold);
     this.ticks = makeLines(THREE.LineSegments, SCENES.length * 2, theme.gold);
-    this.eventTexture = makeDotTexture();
+    this.eventTexture = makeCrispDotTexture();
     this.eventMaterial = new THREE.PointsMaterial({
       map: this.eventTexture,
       color: theme.gold,
@@ -200,7 +200,8 @@ export class GuideLines {
     }
     this.eventDots.geometry.attributes.position.needsUpdate = true;
     this.eventDots.geometry.setDrawRange(0, k);
-    this.eventMaterial.size = EVENT_DOT_PX * ctx.pixelRatio;
+    // three.js が描く時に画面の倍率を掛けるので、ここでは CSS px のまま渡す(掛けると高精細の画面で 2 倍になる)
+    this.eventMaterial.size = EVENT_DOT_PX;
     this.eventMaterial.opacity = EVENT_OPACITY * fade;
     this.eventDots.visible = k > 0;
   }

@@ -12,6 +12,33 @@ import { projectToScreen, screenRadiusPx } from './frame';
 import type { Vec3 } from './math';
 import { relativePosition } from './placement';
 
+/**
+ * ボイジャーの光点の明滅(全体を俯瞰)。3D 側の白い芯の上に、にじみを重ねてゆっくり明るさを増減させる。
+ * 3D で描くと止めている間も描き直しが続くので、目印の層の CSS の動きにする。動きを減らす設定では明滅しない
+ */
+const BEACON_STYLE_ID = 'voyager-beacon-style';
+const BEACON_CSS = `
+.voyager-beacon {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-text) 85%, transparent) 0, color-mix(in srgb, var(--color-gold) 45%, transparent) 30%, transparent 70%);
+  opacity: 0.2;
+  animation: voyager-beacon var(--dur-beacon) var(--ease-in-out) infinite alternate;
+  pointer-events: none;
+}
+@keyframes voyager-beacon {
+  from { opacity: 0.15; transform: scale(0.8); }
+  to { opacity: 0.85; transform: scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .voyager-beacon { animation: none; opacity: 0.5; }
+}
+`;
+
 /** 名前どうしがこの距離(px)以内なら、優先度の低いほうを隠す */
 const DECLUTTER_PX = 28;
 const RING_MIN_PX = 18;
@@ -188,6 +215,12 @@ export class MarkerLayer {
 
   constructor(overlay: HTMLElement, eph?: Ephemeris) {
     this.overlay = overlay;
+    if (typeof document !== 'undefined' && !document.getElementById(BEACON_STYLE_ID)) {
+      const style = document.createElement('style');
+      style.id = BEACON_STYLE_ID;
+      style.textContent = BEACON_CSS;
+      document.head.appendChild(style);
+    }
     this.eph = eph ?? null;
     if (eph) for (const id of GAS_GIANT_MOONS) this.moonRange.set(id, eph.coverage(id));
   }
@@ -221,6 +254,11 @@ export class MarkerLayer {
       'font-family:var(--font-body);font-size:var(--text-xs);letter-spacing:var(--label-tracking);' +
       'text-shadow:var(--text-halo);color:inherit;';
 
+    if (id === 'voyager1') {
+      const beacon = document.createElement('span');
+      beacon.className = 'voyager-beacon';
+      root.append(beacon);
+    }
     root.append(svg, label);
     this.overlay.appendChild(root);
     return { root, svg, label, visible: false, color: '', ringPx: -1, labelKey: '', labelW: name.length * CHAR_PX, side: null };

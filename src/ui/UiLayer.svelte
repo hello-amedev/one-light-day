@@ -33,10 +33,12 @@
     stats?: () => StageStats;
     /** 操作しない間に入った/戻った時に呼ぶ(目印の層と 3D の線を一緒に薄くするため) */
     onIdleChange?: (idle: boolean) => void;
+    /** 名場面・出来事の文が出た・消えた時に呼ぶ(後ろの天体の名前と目印を薄くするため) */
+    onCaptionChange?: (shown: boolean) => void;
     /** 天体の目印の画面の位置を 3D から受け取る口(写真の窓の線に使う)。3D が無い時は渡さない */
     watchBody?: (body: 'earth', listener: (p: BodyScreenPoint) => void) => () => void;
   }
-  let { store, eph, stats, onIdleChange, watchBody }: Props = $props();
+  let { store, eph, stats, onIdleChange, onCaptionChange, watchBody }: Props = $props();
 
   const com = t().common;
   const txt = t().hud;
@@ -241,7 +243,7 @@
 <div class="photo-layer" class:hidden={starsOnly}>
   <PhotoWindow {store} {watchBody} />
 </div>
-<SceneCaption {store} {eph} />
+<SceneCaption {store} {eph} onshownchange={onCaptionChange} />
 <IntroOverlay {store} ontutorial={firstTutorial} />
 {#if aboutOpen}
   <AboutPanel onclose={() => (aboutOpen = false)} />
@@ -341,6 +343,11 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
+  }
+  /* 題字は大文字だけで下に伸びる字が無く、字の見た目の中心が行の中心より 2px ほど下にある。≡ もそこへ下げてそろえる(画面で測った値) */
+  .brand-row .menu {
+    position: relative;
+    top: 2px;
   }
   .title {
     margin: 0;
@@ -450,8 +457,8 @@
     }
     .brand-row {
       gap: var(--space-2);
-      /* 押す範囲(44px)の上の空きぶん持ち上げ、題字の字の中心を右上の日付の数字の中心にそろえる */
-      margin-top: calc(var(--space-2) * -1);
+      /* 押す範囲(44px)の上の空きぶん持ち上げ、題字の字の中心を右上の日付の数字の中心にそろえる(字の画素で測った値) */
+      margin-top: -11px;
     }
     /* 題字と視点のアイコンの間の、押す範囲どうしの空きを詰める */
     .brand {

@@ -25,7 +25,7 @@ import { bodyToEcliptic, EQUATORIAL_RADIUS_KM, FLATTENING, ROTATION, toBodyFrame
 import { SurfaceTextures } from './surfaceTextures';
 import type { Theme } from './theme';
 import { sunGlowSizes } from './zoomView';
-import { makeCoreTexture, makeDotTexture, makeGlowTexture, makeSpikeTexture } from './textures';
+import { makeBeaconTexture, makeCoreTexture, makeDotTexture, makeGlowTexture, makeSpikeTexture } from './textures';
 import { moonlight } from './moonlight';
 
 /** この半径(px)より小さい球は、光の点で描く */
@@ -38,6 +38,8 @@ const FADE_SECONDS = 0.4;
 const HALO_ABOVE_PX = 6;
 /** ボイジャーの点・名前を出す、カメラからの最小の距離(km)。視界から切り替えた直後は出さない */
 const VOYAGER_MARK_MIN_KM = 1e5;
+/** ボイジャーの光点の絵の大きさ(px)。芯は約 3px、十字の光はその外へ短く伸びる */
+const VOYAGER_BEACON_PX = 20;
 /** 土星の環の表の画像の幅 */
 const RING_PROFILE_WIDTH = 4096;
 /** 環の色合い(わずかに黄みのある白) */
@@ -297,7 +299,8 @@ export class Bodies {
     const glowTex = makeGlowTexture();
     const coreTex = makeCoreTexture();
     const spikeTex = makeSpikeTexture();
-    this.textures.push(dotTex, glowTex, coreTex, spikeTex, this.blank);
+    const beaconTex = makeBeaconTexture();
+    this.textures.push(dotTex, glowTex, coreTex, spikeTex, beaconTex, this.blank);
 
     for (const id of DRAWN) this.items.push(this.createItem(id, theme, dotTex));
 
@@ -319,10 +322,11 @@ export class Bodies {
     this.spikes = additive(spikeTex);
     this.core = additive(coreTex);
 
+    // ボイジャー自身は、金の印の中でただ一つの白い光点(芯・短い十字の光・淡い金のにじみ。明滅は目印の層の CSS)
     const vm = new THREE.SpriteMaterial({
-      map: dotTex,
-      color: new THREE.Color(theme.gold),
+      map: beaconTex,
       transparent: true,
+      blending: THREE.AdditiveBlending,
       depthTest: false,
       depthWrite: false,
     });
@@ -562,7 +566,7 @@ export class Bodies {
     if (showVoyager) {
       const p = shellPlacement(vRel, 1);
       this.voyagerDot.position.set(p.position[0], p.position[1], p.position[2]);
-      this.voyagerDot.scale.setScalar(7 * kmPerPx);
+      this.voyagerDot.scale.setScalar(VOYAGER_BEACON_PX * kmPerPx);
       infos.push({ id: 'voyager1', screen: projectToScreen(vRel, ctx), radiusPx: 0, distance: vd });
     }
     return infos;

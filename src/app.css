@@ -79,6 +79,7 @@
   --dur-xl: 900ms; /* 名場面の文など、ゆっくり消えるもの */
   --dur-intro-in: 1200ms; /* 開いた直後の題字が現れる */
   --dur-intro-out: 700ms; /* 題字が消える。現れるより短くする */
+  --dur-beacon: 2600ms; /* ボイジャーの光点が明るくなって戻る 1 回の長さ(全体を俯瞰) */
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --ease-in-out: cubic-bezier(0.5, 0, 0.2, 1);
 
@@ -100,6 +101,9 @@
   /* ボタンのまとまり(左下の再生・速さ・送り)の薄い地と細い枠 */
   --group-bg: color-mix(in srgb, var(--color-space) 50%, transparent);
   --group-border: color-mix(in srgb, var(--color-rule) 85%, transparent);
+
+  /* 名場面・出来事の文が出ている間の、天体の名前と目印の不透明度 */
+  --markers-under-caption: 0.3;
 
   /* 操作しない間に操作の層を薄くした時の不透明度 */
   --idle-opacity: 0.16;
