@@ -14,12 +14,11 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+# 作る段(検査とビルドと公開用のファイルの用意)と公開する段を分ける(GitHub の標準の形)。
+# 1 つの段で続けて行うと、上げた直後の公開用のファイルを公開の手順が見つけられず失敗することが続いた(2026-11-22 に 5 回)
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,5 +31,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
