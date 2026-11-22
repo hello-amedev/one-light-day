@@ -140,7 +140,9 @@ describe('出来事の文', () => {
     const titan = t().events.lines.titanFlyby;
     if (/\d+\s*日/.test(titan.replace(/\d+時間/g, ''))) expect(titan).toContain('UTC');
     expect(t().events.lines.titanFlyby).not.toMatch(/6,?490/);
-    expect(t().events.lines.ioVolcano).toMatch(/撮影.*発見/);
+    // イオの火山は、日付を書くなら撮影(8 日)と発見(9 日)を分けて書く
+    const io = t().events.lines.ioVolcano;
+    if (/\d+\s*日/.test(io)) expect(io).toMatch(/撮影.*発見/);
   });
 });
 

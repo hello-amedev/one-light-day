@@ -82,3 +82,13 @@
 - 2026-11-14 から科学・工学のデータは届かず、搬送波だけを受けている。NASA は搬送波と軌道の計算で 1 光日を確かめた。画面の文は扱っていない
 
 出典: https://www.nasa.gov/news-release/nasas-voyager-1-makes-history-reaching-one-light-day-from-earth/ 、https://science.nasa.gov/mission/voyager/voyager-1/voyager-1-what-is-a-light-day/ 、https://svs.gsfc.nasa.gov/15120 、https://www.astroarts.co.jp/article/hl/a/14777_voyager1 、https://sorae.info/space/20261117-voyager-1-one-light-day.html
+
+## 2026-11-22 の調べ: 最も遠い人工物になった日の距離の基準
+
+文言の直しの画面で、出来事の名前を「地球から最も遠い人工物に」とする案が出たので、Horizons でボイジャー1号(-31)とパイオニア10号(-23)の距離を 10 日おきに比べた。
+
+- 太陽からの距離: 1998-02-19 でパイオニア10号 69.424 天文単位、ボイジャー1号 69.425 天文単位。2-17 ごろに入れ替わる(NASA の日付と合う)
+- 地球からの距離: 1997-11-01 ですでにボイジャー1号が遠い(69.04 対 67.86)。1998-03-01 から 7 月ごろまではパイオニア10号のほうが遠い。地球の公転で入れ替わりを繰り返す
+- そのため、2-17 の出来事は「太陽から」の距離で書く。画面の名前は「太陽から最も遠い人工物に」
+
+出典: https://ssd.jpl.nasa.gov/horizons/ (観測者の表、中心は地球、量 19・20)

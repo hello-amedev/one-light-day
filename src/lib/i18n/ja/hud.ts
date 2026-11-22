@@ -4,24 +4,24 @@ import type { RateId } from '../../store/types';
 export const hud = {
   // ── 視点の切り替え ──
   viewGroup: '視点',
-  viewVoyager: 'ボイジャーの視界',
-  viewOverview: '引きの眺め',
+  viewVoyager: 'ボイジャー視点',
+  viewOverview: '全体を俯瞰',
   viewCraft: 'ボイジャー本体',
 
   // ── 向くボタン ──
-  lookGroup: '向く',
+  lookGroup: '視点の向き',
   /** 天体の名前を受けて「◯◯を向く」 */
-  lookAt: (name: string) => `${name}を向く`,
-  lookAhead: '進む先を向く',
+  lookAt: (name: string) => `${name}を見る`,
+  lookAhead: '進む先を見る',
 
   // ── 再生 ──
   playGroup: '再生',
   play: '再生',
   pause: '停止',
   /** 速さのボタンの名前(指した時)。押すたびに 1時間 → 1日 → 1か月 → 1年 と切り替わる */
-  rateName: '再生の速さ',
+  rateName: '再生速度',
   /** 速さのボタンの読み上げ。speed は下の rates の文 */
-  rateButton: (speed: string) => `再生の速さ：${speed}`,
+  rateButton: (speed: string) => `再生速度：${speed}`,
   rates: {
     hour: '1秒＝1時間',
     day: '1秒＝1日',
@@ -69,7 +69,7 @@ export const hud = {
 
   // ── 引きの眺めの縮尺の物差し ──
   /** 物差しの読み上げ。length は「10億km」のような長さ */
-  scaleBarAria: (length: string) => `縮尺の物差し（この長さが${length}）`,
+  scaleBarAria: (length: string) => `縮尺（この長さが${length}）`,
 
   // ── 日付 ──
   /** 日本時間の併記。時刻が意味を持つ所だけで使う */
