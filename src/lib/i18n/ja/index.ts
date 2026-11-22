@@ -11,6 +11,7 @@ import { menu } from './menu';
 import { photo } from './photo';
 import { scenes } from './scenes';
 import { timeline } from './timeline';
+import { tutorial } from './tutorial';
 
 export const ja = {
   about,
@@ -25,4 +26,5 @@ export const ja = {
   photo,
   scenes,
   timeline,
+  tutorial,
 };

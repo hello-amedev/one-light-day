@@ -1,5 +1,5 @@
 <script lang="ts">
-  // 右上のメニュー。表示の切り替え 3 つ(入・切が分かる)、星空だけを表示、このサイトについて。
+  // 右上のメニュー。表示の切り替え 3 つ(入・切が分かる)、星空だけを表示、使い方、このサイトについて。
   // 外を押す・Esc で閉じる。矢印で項目を移れる。表示の切り替えは続けて押せるよう、押しても閉じない。
   import { t } from '../lib/i18n';
   import type { AppStore, DisplayPrefs } from '../lib/store';
@@ -12,10 +12,12 @@
     store: AppStore;
     /** 「このサイトについて」を開く(再生を止めるのは呼び出し側) */
     onabout: () => void;
+    /** 使い方の案内を開く(再生を止めるのは呼び出し側) */
+    ontutorial: () => void;
     /** 一覧を開いている間 true(操作しない間に薄くならないよう、層が知る) */
     open?: boolean;
   }
-  let { store, onabout, open = $bindable(false) }: Props = $props();
+  let { store, onabout, ontutorial, open = $bindable(false) }: Props = $props();
   const txt = t().menu;
   const view = watchStore(store);
 
@@ -31,6 +33,10 @@
   function starsOnly() {
     open = false;
     store.setStarsOnly(true);
+  }
+  function tutorial() {
+    open = false;
+    ontutorial();
   }
   function about() {
     open = false;
@@ -66,6 +72,7 @@
       {/each}
       <div class="rule" role="separator"></div>
       <button type="button" class="item" role="menuitem" onclick={starsOnly}>{txt.starsOnly}</button>
+      <button type="button" class="item" role="menuitem" onclick={tutorial}>{t().tutorial.entry}</button>
       <button type="button" class="item" role="menuitem" onclick={about}>{t().about.entry}</button>
     </div>
   {/if}

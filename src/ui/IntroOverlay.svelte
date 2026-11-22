@@ -12,7 +12,12 @@
   import type { AppStore } from '../lib/store';
   import { watchStore } from './store.svelte';
 
-  let { store }: { store: AppStore } = $props();
+  interface Props {
+    store: AppStore;
+    /** 案内の 1 行を出す時に先に呼ぶ。使い方の案内を代わりに開いたら true(その時は 1 行を出さない) */
+    ontutorial?: () => boolean;
+  }
+  let { store, ontutorial }: Props = $props();
   const txt = t().intro;
   const view = watchStore(store);
 
@@ -40,7 +45,11 @@
     }
     const s = untrack(() => view.state);
     const wait = prev === 'run' && s.display.captions && !s.starsOnly ? GUIDE_AFTER_CAPTION_MS : 0;
-    timers.push(setTimeout(() => (showGuide = true), wait));
+    timers.push(
+      setTimeout(() => {
+        if (!ontutorial?.()) showGuide = true;
+      }, wait),
+    );
     timers.push(setTimeout(() => store.stopIntro(), wait + INTRO_GUIDE_SECONDS * 1000));
     return clearTimers;
   });

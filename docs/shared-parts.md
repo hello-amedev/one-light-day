@@ -53,7 +53,8 @@
 | 名場面・出来事の文に添えて浮かばせる写真(地球と月、ペイル・ブルー・ドット) | `captionPhotoOf`(表示は `SceneCaption`) | `src/ui/captionPhoto.ts` |
 | 写真を画面の中央へ大きく広げる(浮かぶ写真から) | `PhotoViewer`(`photo` に `ViewerPhoto` を渡す。null で閉じる) | `src/ui/PhotoViewer.svelte` |
 | 開いた直後の状態に戻して自動再生し直す | `store.restart(still)`(3D のカメラは `resetSeq` で戻す) | `src/lib/store/`・`src/stage/camera.ts` の `reset` |
-| 右上のメニュー(表示の切り替え・星空だけ・このサイトについて) | `MainMenu` | `src/ui/MainMenu.svelte` |
+| 右上のメニュー(表示の切り替え・星空だけ・使い方・このサイトについて) | `MainMenu` | `src/ui/MainMenu.svelte` |
+| 使い方の案内(部品を囲んで札を出す 4 段。囲む部品は `data-tour` の印、段は `TUTORIAL_STEPS`。見たかどうかは `tutorialSeen` / `markTutorialSeen`) | `Tutorial` | `src/ui/Tutorial.svelte`・`src/lib/tutorial.ts` |
 | 一覧の開閉と矢印キーの操作 | `use:popover`、`nextMenuIndex` | `src/ui/popover.ts`・`src/ui/controls.ts` |
 | 右下の距離の上の倍率・機体からの距離 | `ReadoutExtra`(判断は `readoutExtra`) | `src/ui/ReadoutExtra.svelte`・`src/ui/controls.ts` |
 | 速さの次の値と送る量・向く相手の候補・星空だけの案内の選び方 | `nextRate` / `stepUnit` / `stepSeconds` / `chooseLookTargets` / `starsOnlyHintKind` | `src/ui/controls.ts` |

@@ -19,6 +19,8 @@
   import ReadoutExtra from './ReadoutExtra.svelte';
   import SceneCaption from './SceneCaption.svelte';
   import Timeline from './Timeline.svelte';
+  import Tutorial from './Tutorial.svelte';
+  import { markTutorialSeen, tutorialSeen } from '../lib/tutorial';
   import ViewSwitch from './ViewSwitch.svelte';
   import { readoutExtra, starsOnlyHintKind, STARS_ONLY_HINT_MS } from './controls';
   import { watchStore } from './store.svelte';
@@ -68,9 +70,27 @@
     store.restart(still);
   }
 
+  // ── 使い方の案内 ──
+  // 初めて来た人には、自動再生が今日で止まった後に 1 回だけ自動で出す(IntroOverlay が案内の 1 行の代わりに呼ぶ)。
+  // メニューの「使い方」からも開く。開いている間は再生を止め、部品を薄くしない
+  let tutorialOpen = $state(false);
+  function openTutorial() {
+    store.pause();
+    menuOpen = false;
+    lookOpen = false;
+    markTutorialSeen();
+    tutorialOpen = true;
+  }
+  /** まだ見ていなければ案内を開いて true を返す */
+  function firstTutorial(): boolean {
+    if (tutorialSeen() || view.state.starsOnly) return false;
+    openTutorial();
+    return true;
+  }
+
   /** 右上の日付を入力している間 */
   let dateEditing = $state(false);
-  const popOpen = $derived(menuOpen || lookOpen || dateEditing);
+  const popOpen = $derived(menuOpen || lookOpen || dateEditing || tutorialOpen);
 
   // ── 星空だけを表示 ──
   // 数字と操作をすべて隠す(戻るのは 3D 側の星空のタップ、または Esc)。入った時に戻し方を数秒だけ案内する
@@ -167,20 +187,22 @@
     <h1 class="title">
       <a href={import.meta.env.BASE_URL} class="home" title={com.restart} onclick={restart}>{com.title}</a>
     </h1>
-    <ViewSwitch {store} />
+    <div data-tour="views">
+      <ViewSwitch {store} />
+    </div>
   </header>
 
   <div class="top">
-    <div class="date">
+    <div class="date" data-tour="date">
       <DateJump {store} bind:editing={dateEditing} />
     </div>
-    <div class="menu">
-      <MainMenu {store} onabout={openAbout} bind:open={menuOpen} />
+    <div class="menu" data-tour="menu">
+      <MainMenu {store} onabout={openAbout} ontutorial={openTutorial} bind:open={menuOpen} />
     </div>
   </div>
 
   {#if view.state.view !== 'craft'}
-    <div class="look">
+    <div class="look" data-tour="look">
       <LookMenu {store} {eph} bind:open={lookOpen} />
     </div>
   {/if}
@@ -200,7 +222,7 @@
     <div class="transport">
       <PlayControls {store} />
     </div>
-    <div class="timeline">
+    <div class="timeline" data-tour="timeline">
       <Timeline {store} />
     </div>
   </div>
@@ -215,9 +237,12 @@
   <PhotoWindow {store} {watchBody} />
 </div>
 <SceneCaption {store} {eph} />
-<IntroOverlay {store} />
+<IntroOverlay {store} ontutorial={firstTutorial} />
 {#if aboutOpen}
   <AboutPanel onclose={() => (aboutOpen = false)} />
+{/if}
+{#if tutorialOpen}
+  <Tutorial onclose={() => (tutorialOpen = false)} />
 {/if}
 {#if hintShown}
   <div class="hint" role="status">{hintKind === 'tap' ? menuTxt.starsOnlyHintTap : menuTxt.starsOnlyHintClick}</div>
